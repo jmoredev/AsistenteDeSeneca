@@ -52,11 +52,15 @@ Consejería de Educación de la Junta de Andalucía.
    (quita cualquier `;jsessionid=...` o token de sesión) y pásala por chat.
 2. Guarda la página con **Ctrl+S → «Solo HTML»** dentro de la carpeta
    `fixtures-entrada/` (no se sube nunca a git).
-3. Anonimízala: `node tools/anonymize.js fixtures-entrada/mi-captura.html`
-4. Revisa visualmente nombres y apellidos del resultado (el script anonimiza
-   DNIs, teléfonos, correos y fotos; los nombres hay que revisarlos a mano).
-5. Con la URL y el archivo `.anon.html` ya se puede construir el adaptador y
-   sus tests.
+3. Conviértela en fixture:
+   `node tools/anonymize.js fixtures-entrada/mi-captura.html tests/fixtures/mi-pantalla.html`
+   El script conserva **solo las tablas de datos** (descarta cabecera con tu
+   nombre y centro, menús, scripts y tokens), respeta los acentos
+   (Windows-1252) y sustituye DNIs, NIE, teléfonos, correos y fotos. Si
+   detecta algo dudoso, no escribe nada y lo explica.
+4. Revisa visualmente el resultado por si quedara algún nombre de persona:
+   los nombres no se pueden detectar de forma fiable.
+5. Ejecuta `npm test` para comprobar que todo sigue en verde.
 
 Pendiente de la Fase 0 del documento de requisitos: validación con docentes
 reales de las pantallas exactas de Séneca por perfil.
