@@ -157,6 +157,16 @@ Prioridad: **[M]** imprescindible v1 · **[S]** deseable v1 · **[C]** futuro.
     iniciada), se analizan fuera de pantalla y solo se muestran en el panel.
   - La pestaña activa se usa como contexto (RF-03), pero ninguna tarea exige
     navegar a una página concreta para poder ejecutarse.
+- **RF-18 [M] Sesión caducada durante una tarea.** Si alguna petición en
+  segundo plano devuelve la pantalla de acceso de Séneca (sesión caducada a
+  mitad de una tarea larga), la tarea se detiene inmediatamente: no se hacen
+  más peticiones, se avisa con mensaje claro («tu sesión ha caducado; vuelve
+  a entrar y repite la tarea») y se ofrece descargar lo ya obtenido,
+  siempre marcado como «resultado parcial» en el propio documento.
+- **RF-19 [M] Ritmo y reintentos acotados.** Las peticiones en segundo plano
+  van en serie con pausas breves (máximo una o dos simultáneas); como mucho
+  dos reintentos por petición fallida y sin bucles automáticos. Un fallo de
+  red persistente se convierte en un mensaje accionable (RF-24).
 
 ### Informes y plantillas (Typst)
 
@@ -321,6 +331,12 @@ puede contradecirlos.
   - Fuentes tipográficas también empaquetadas: nada se descarga al generar.
   - La compilación se prueba en los tests de adaptadores con los mismos
     fixtures anonimizados (RT-05).
+- **RT-09 [M] Procedimiento de captura y anonimización de fixtures.**
+  Workflow documentado y verificación automática: capturar el HTML con la
+  sesión del propio docente → anonimizar (nombres, DNIs, teléfonos, correos,
+  direcciones → datos inventados) → verificación automática de patrones
+  sensibles antes de permitir el commit. Ningún fixture entra al repositorio
+  sin pasar esa verificación.
 
 ## 9. Requisitos de distribución (RD)
 
@@ -338,6 +354,15 @@ puede contradecirlos.
   público con issues) enlazado desde el panel y desde la ficha de la tienda.
 - **RD-05 [M] Sin anuncios, sin cuentas, sin pagos.** La extensión es
   gratuita, no requiere registro y no cobra nada, y así debe decirlo la ficha.
+- **RD-06 [M] Identidad no oficial.** La ficha, el panel y el README indican
+  claramente que es una herramienta independiente creada por docentes, **sin
+  relación oficial con la Consejería de Educación de la Junta de Andalucía**
+  ni respaldada por ella, y no se usan logotipos ni imagen oficial de Séneca
+  o de la Junta.
+- **RD-07 [S] FAQ para direcciones y DPO.** Documento breve en español que
+  responde a lo que preguntará quien deba autorizar la extensión en un
+  centro: qué datos toca, qué no hace, dónde vive la información y por qué
+  nada sale del navegador.
 
 ## 10. Criterios de aceptación generales
 
@@ -373,6 +398,7 @@ La v1 se considera completa cuando:
 | Perfiles distintos (tutor, docente, dirección…) ven opciones diferentes en Séneca | Derivar la disponibilidad de tareas de lo que la sesión muestra realmente, nunca de listas fijas de perfiles (RF-07); fixtures por perfil en tests (RT-05) |
 | Las peticiones en segundo plano pudieran considerarse uso automatizado por Séneca | Solo GET a `juntadeandalucia.es` con la sesión existente, lista blanca por adaptador (RP-07), ritmo moderado y tarea cancelable (RF-23): mismo tipo de acceso que el navegador al navegar, sin credenciales y sin escrituras |
 | Motor WASM (Typst): tamaño de la extensión y revisión de tiendas por CSP especial | Motor y fuentes empaquetados y auditados (RP-06, RT-08), justificación explícita en ficha (RD-02), tamaño comprimido razonable y pruebas de compilación en tests (RT-05) |
+| Algunos informes de Séneca pueden generarse mediante POST, hoy prohibido por RP-07 | Medir los flujos reales en la Fase 0 (D11): las descargas que exijan POST quedan fuera de v1 o se tratan aparte con revisión específica |
 
 ## 12. Fases sugeridas
 
@@ -382,7 +408,8 @@ La v1 se considera completa cuando:
   momento para validar: «Profesorado» y «Tutoría F» (convivencia; menú
   «Part Centros Seguimiento de Convivencia»). Queda pendiente validar con
   otros perfiles (dirección, orientación) y con centros donde el menú de
-  convivencia tenga otro nombre (RF-14).
+  convivencia tenga otro nombre (RF-14). Además se medirá con datos reales
+  qué flujos de Séneca usan GET y cuáles POST (decisión D11).
 - **Fase 1 — Núcleo.** RF-01 a RF-04, RF-10 (alumnado) completo, exportación
   con vista previa (RF-20 a RF-24), motor Typst local y primera plantilla
   (RF-16, RT-08), marco de adaptadores y tests con fixtures.
@@ -432,3 +459,9 @@ La v1 se considera completa cuando:
   a partir de una plantilla predefinida que se ajusta poco a poco, versión a
   versión (RF-16). Compilación 100 % local con Typst en WebAssembly
   empaquetado (RT-08).
+- **D11.** Decisión del propietario: medir en la Fase 0 qué flujos de Séneca
+  usan GET y cuáles POST antes de cerrar el alcance de v1; mientras tanto
+  RP-07 se mantiene sin cambios (solo GET). Las descargas que exijan POST
+  quedan fuera de v1 o se tratan aparte con revisión específica.
+- **D12.** Decisión del propietario: el repositorio se publica bajo licencia
+  **GPL-3.0** (copyleft: cualquier derivado debe seguir siendo abierto).

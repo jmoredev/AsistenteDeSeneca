@@ -24,6 +24,16 @@ Los requisitos completos están en [`REQUISITOS.md`](REQUISITOS.md).
   (https://www.conventionalcommits.org/es/): p. ej.
   `feat: exportar lista de clase a PDF`, `fix: detectar sesión caducada`.
 
+## Licencia
+
+Copyright (C) 2025  Ayudante de Séneca.
+Este programa es software libre: puedes redistribuirlo y/o modificarlo bajo
+los términos de la [Licencia Pública General de GNU](LICENSE) tal como la
+publica la Free Software Foundation, versión 3.
+
+Herramienta independiente creada por docentes, sin relación oficial con la
+Consejería de Educación de la Junta de Andalucía.
+
 ## Cómo empezar (desarrollo)
 
 Pendiente de la Fase 0 del documento de requisitos: validación con docentes
