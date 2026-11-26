@@ -1,0 +1,16 @@
+# Herramientas y cachés
+.atl/
+
+# Dependencias
+node_modules/
+
+# Artefactos de build
+dist/
+build/
+*.zip
+*.crx
+*.xpi
+
+# Sistema
+.DS_Store
+Thumbs.db
