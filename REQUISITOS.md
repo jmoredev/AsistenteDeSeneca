@@ -158,10 +158,27 @@ Prioridad: **[M]** imprescindible v1 · **[S]** deseable v1 · **[C]** futuro.
   - La pestaña activa se usa como contexto (RF-03), pero ninguna tarea exige
     navegar a una página concreta para poder ejecutarse.
 
+### Informes y plantillas (Typst)
+
+- **RF-16 [M] Informes con plantilla Typst.** Los informes en PDF se generan
+  con Typst a partir de una **plantilla predefinida** empaquetada en la
+  extensión.
+  - La plantilla es un recurso separado del código: ajustar diseño (márgenes,
+    tablas, encabezados, pie con curso y fecha) no exige tocar la lógica de
+    extracción ni reescribir adaptadores.
+  - La plantilla evoluciona **poco a poco, versión a versión**, según lo que
+    pidan los docentes; cada cambio de plantilla se versiona en el
+    repositorio con su motivo.
+- **RF-17 [M] Datos rellenados, nunca adivinados.** La plantilla solo
+  rellena los campos que el adaptador extrajo; un dato ausente se muestra
+  vacío y señalizado («—»), nunca inventado ni estimado (consistente con
+  RC-04).
+
 ### Exportación y resultados
 
 - **RF-20 [M] Formatos de salida.** XLSX/CSV para datos tabulares, PDF para
-  listas e informes, y opción «imprimir» para reusar el diálogo del navegador.
+  listas e informes (generados con Typst, ver RF-16), y opción «imprimir»
+  para reusar el diálogo del navegador.
 - **RF-21 [M] Nombres de archivo descriptivos.** P. ej.
   `Lista_1ºESO-A_2025-10-01.pdf`, no `documento(3).pdf`.
 - **RF-22 [M] Vista previa obligatoria.** Antes de descargar, la extensión
@@ -294,6 +311,16 @@ puede contradecirlos.
 - **RT-07 [S] Registro de diagnóstico local** activable por el docente con un
   clic («modo avería»), que solo sale de su ordenador si él decide copiarlo y
   pegarlo, y que avisa de no incluir datos personales.
+- **RT-08 [M] Motor Typst local.** Los PDF se generan con Typst compilado a
+  WebAssembly (p. ej. typst.ts) y **empaquetado dentro de la extensión**:
+  compila en el propio navegador, sin ninguna comunicación de red (RP-01).
+  **El docente no necesita Typst ni nada instalado en su equipo**: el
+  compilador viaja dentro de la extensión y se actualiza con ella.
+  - CSP de las páginas de la extensión con `'wasm-unsafe-eval'` como único
+    permiso adicional, justificado en el expediente de tienda (RD-02).
+  - Fuentes tipográficas también empaquetadas: nada se descarga al generar.
+  - La compilación se prueba en los tests de adaptadores con los mismos
+    fixtures anonimizados (RT-05).
 
 ## 9. Requisitos de distribución (RD)
 
@@ -303,7 +330,8 @@ puede contradecirlos.
 - **RD-02 [M] Expediente de tienda.** Ficha con capturas, descripción en
   español, política de privacidad (RP-09) y justificación clara del permiso
   sobre `juntadeandalucia.es` («solo funciona dentro de Séneca, que es donde
-  están tus datos»).
+  están tus datos») y del uso de WebAssembly local para generar los PDF
+  (RT-08), único permiso adicional de CSP.
 - **RD-03 [S] Instrucciones de instalación guiada** paso a paso con capturas
   para docentes sin experiencia.
 - **RD-04 [M] Canal de ayuda y avisos de incidencias** (p. ej. repositorio
@@ -344,6 +372,7 @@ La v1 se considera completa cuando:
 | Público poco técnico abandona al primer problema | Mensajes accionables (RF-24), ayuda integrada (RF-05), onboarding de 3 frases (RU-05) |
 | Perfiles distintos (tutor, docente, dirección…) ven opciones diferentes en Séneca | Derivar la disponibilidad de tareas de lo que la sesión muestra realmente, nunca de listas fijas de perfiles (RF-07); fixtures por perfil en tests (RT-05) |
 | Las peticiones en segundo plano pudieran considerarse uso automatizado por Séneca | Solo GET a `juntadeandalucia.es` con la sesión existente, lista blanca por adaptador (RP-07), ritmo moderado y tarea cancelable (RF-23): mismo tipo de acceso que el navegador al navegar, sin credenciales y sin escrituras |
+| Motor WASM (Typst): tamaño de la extensión y revisión de tiendas por CSP especial | Motor y fuentes empaquetados y auditados (RP-06, RT-08), justificación explícita en ficha (RD-02), tamaño comprimido razonable y pruebas de compilación en tests (RT-05) |
 
 ## 12. Fases sugeridas
 
@@ -355,7 +384,8 @@ La v1 se considera completa cuando:
   otros perfiles (dirección, orientación) y con centros donde el menú de
   convivencia tenga otro nombre (RF-14).
 - **Fase 1 — Núcleo.** RF-01 a RF-04, RF-10 (alumnado) completo, exportación
-  con vista previa (RF-20 a RF-24), marco de adaptadores y tests con fixtures.
+  con vista previa (RF-20 a RF-24), motor Typst local y primera plantilla
+  (RF-16, RT-08), marco de adaptadores y tests con fixtures.
 - **Fase 2 — Evaluación y faltas.** RF-11 y RF-12 sobre el núcleo.
 - **Fase 3 — Publicación.** RD-01 a RD-05, accesibilidad auditada (RU-03),
   expedientes de tienda.
@@ -398,3 +428,7 @@ La v1 se considera completa cuando:
   con peticiones en segundo plano (RF-15), exclusivamente GET de lista
   blanca declarada por adaptador (RP-07), analizando las respuestas fuera
   de pantalla.
+- **D10.** Petición del propietario: los informes se generan con **Typst**
+  a partir de una plantilla predefinida que se ajusta poco a poco, versión a
+  versión (RF-16). Compilación 100 % local con Typst en WebAssembly
+  empaquetado (RT-08).
