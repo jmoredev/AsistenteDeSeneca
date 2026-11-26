@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Ayudante de Séneca",
+  "version": "0.1.0",
+  "description": "Facilita las tareas frecuentes de Séneca. Todo se procesa en tu navegador: nada sale de tu equipo.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Ayudante de Séneca"
+  },
+  "permissions": ["activeTab"],
+  "host_permissions": ["https://*.juntadeandalucia.es/*"]
+}

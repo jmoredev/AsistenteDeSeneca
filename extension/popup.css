@@ -1,0 +1,90 @@
+/* Accessible, large-type panel. WCAG AA contrast (RU-03). */
+
+:root {
+  --fondo: #ffffff;
+  --texto: #1a1a1a;
+  --texto-suave: #444444;
+  --acento: #1d4e89;
+}
+
+body {
+  font-family: system-ui, "Segoe UI", Arial, sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+  width: 320px;
+  margin: 0;
+  padding: 12px;
+  font-size: 105%;
+  line-height: 1.45;
+}
+
+h1 {
+  font-size: 1.15rem;
+  margin: 0 0 4px;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 12px 0 4px;
+  color: var(--acento);
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 8px 0 4px;
+  color: var(--texto-suave);
+}
+
+#estado {
+  margin: 0 0 8px;
+  color: var(--texto-suave);
+}
+
+.aviso {
+  background: #fff3cd;
+  border: 1px solid #b08d00;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.tarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  font-size: 1rem;
+  padding: 10px 12px;
+  margin: 4px 0;
+  border: 2px solid var(--acento);
+  border-radius: 8px;
+  background: var(--acento);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.tarea:disabled {
+  background: #e9e9e9;
+  color: #555555;
+  border-color: #999999;
+  cursor: not-allowed;
+}
+
+.tarea .nota {
+  display: block;
+  font-size: 0.85rem;
+  color: inherit;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+footer {
+  margin-top: 12px;
+  border-top: 1px solid #dddddd;
+  padding-top: 8px;
+}
+
+footer p {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  margin: 0;
+}
