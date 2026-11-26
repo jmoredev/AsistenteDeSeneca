@@ -18,14 +18,23 @@
 //                           class ... TableData). Todo lo de fuera (cabecera
 //                           con nombres de usuario/centro/perfil, menús,
 //                           scripts) se descarta.
-//   "pagina"                conserva la página entera y solo sustituye
-//                           patrones (comportamiento anterior de la
-//                           herramienta).
+//   "pagina"                conserva la estructura de la página entera y solo
+//                           sustituye datos (comportamiento anterior).
 //
-// En ambos modos se eliminan los <script>, se neutralizan los valores de
-// data-menulink, onclick, onmousedown y href, se vacían los value de los
-// <input>, se sustituye el src de las imágenes y se borran DNI, NIE,
-// teléfonos españoles y correos.
+// Lista blanca estricta, en los dos modos:
+//   - De cada etiqueta solo sobreviven los atributos permitidos (class, id,
+//     colspan, rowspan, name, type, size, scope; value vacío en <input>, src
+//     sustituido en <img>). Cualquier otro atributo se descarta, así que no
+//     queda ningún token, URL, estilo ni controlador de eventos.
+//   - Se eliminan por completo <script> (aunque no estén cerrados), <style>,
+//     <iframe>, <object>, <embed>, <link> y <meta>; de <form> se conserva el
+//     contenido. El texto de la tabla que no es código se mantiene.
+//   - Se sustituyen DNI y NIE (con cualquier mezcla de espacios, puntos y
+//     guiones), correos con o sin dominio, rutas de menú/navegación y
+//     cualquier tirada de 7 cifras o más (espacios, puntos, guiones,
+//     paréntesis y prefijo +34/0034 incluidos), que es lo que identifica a un
+//     teléfono o a un documento. Las fechas (01/09/2025) y los recuentos
+//     («28 alumnos\as») no se tocan.
 //
 // La captura de Séneca está en Windows-1252: se lee y se escribe como
 // "latin1" para conservar los bytes (leerla como UTF-8 destrozaba 115
@@ -37,22 +46,22 @@
 
 const fs = require("node:fs");
 
-const DNI_RE = /\b\d{8}[A-HJ-NP-TV-Za-hj-np-tv-z]\b/g;
-const NIE_RE = /\b[XYZxyz]-?\d{7}-?[A-HJ-NP-TV-Za-hj-np-tv-z]\b/g;
-const PHONE_RE = /(\+34[\s-]?)?\b[6-9]\d{8}\b/g;
-const EMAIL_RE = /\b[\w.+-]+@[\w-]+\.[A-Za-z]{2,}\b/g;
+// --- patrones de datos personales ----------------------------------------
 
-// Formas «casi» sensibles que la sustitución automática no toca (dígitos con
-// separadores). Si aparecen, se para y se pide revisión humana.
-const SOSPECHOSOS = [
-  { re: /\b\d{8}[\s.-]?[A-Za-z]\b/g, descripcion: "posible DNI con separadores" },
-  { re: /\b[XYZxyz][\s.-]?\d{7}[\s.-]?[A-Za-z]\b/g, descripcion: "posible NIE con separadores" },
-  { re: /(\+34[\s.-]?)?\b[6-9]\d{2}[\s.-]\d{3}[\s.-]\d{3}\b/g, descripcion: "posible teléfono con separadores" }
-];
+// Ruta de menú o de navegación con token: nunca puede sobrevivir al fixture.
+const RUTA_RE = /(?:\.\.?\/menus|nav)\/[\w.%-]+/gi;
 
-// Atributos cuyo valor puede contener un token de sesión, una ruta de menú o
-// código ejecutable: se sustituyen por un valor neutro.
-const ATRIBUTOS_CON_TOKEN = ["data-menulink", "onclick", "onmousedown", "href"];
+// NIE y DNI con cualquier mezcla de espacios, puntos y guiones entre cifras.
+const NIE_RE = /\b[XYZxyz](?:[\s.-]*\d){7}[\s.-]*[A-HJ-NP-TV-Za-hj-np-tv-z]\b/g;
+const DNI_RE = /\b(?:\d[\s.-]*){8}[A-HJ-NP-TV-Za-hj-np-tv-z]\b/g;
+
+// Correo, con o sin dominio de primer nivel (usuario@servidor también).
+const EMAIL_RE = /\b[\w.+-]+@[\w-]+(?:\.[\w-]+)*\b/g;
+
+// Cualquier tirada de cifras con sus separadores habituales. Si al quitar
+// espacios, puntos, guiones, paréntesis y un prefijo +34/0034 quedan 7 cifras
+// o más, es un identificador (teléfono, DNI sin letra, expediente...).
+const TIRADA_NUMERICA_RE = /\+?\d[\d\s.()\-]*/g;
 
 // Los sustitutos están elegidos para que no vuelvan a casar con los patrones:
 // así verify() puede demostrar que la salida no tiene identificadores.
@@ -62,34 +71,152 @@ const PLACEHOLDER = {
   phone: "TEL-EJEMPLO",
   email: "correo-ejemplo",
   img: "data:ayudante-seneca/foto-anonima",
-  attr: "#"
+  ruta: "RUTA-EJEMPLO"
 };
+
+// --- lista blanca de marcado ---------------------------------------------
+
+const ATRIBUTOS_GENERALES = ["class", "id", "colspan", "rowspan", "name", "type", "size", "scope"];
+const ATRIBUTOS_EXTRA = {
+  input: ["value"],
+  img: ["src"],
+  meta: ["charset"],
+  html: ["lang"]
+};
+
+// Elementos que se eliminan con todo su contenido: su interior es código o
+// recursos, nunca texto de la tabla.
+const ELEMENTOS_CON_CODIGO = ["script", "style", "iframe", "object"];
+// Elementos vacíos que se eliminan tal cual.
+const ELEMENTOS_VACIOS = ["link", "meta", "embed"];
+// Contenedores que se despliegan: se van las etiquetas y queda su texto.
+const ELEMENTOS_DESENVOLTADOS = ["form"];
+// Lo que verify() no admite encontrar en un fixture.
+const ELEMENTOS_PROHIBIDOS = ELEMENTOS_CON_CODIGO.concat(ELEMENTOS_VACIOS, ELEMENTOS_DESENVOLTADOS).filter(
+  (nombre) => nombre !== "meta"
+);
 
 // Etiquetas de apertura, admitiendo «>» dentro de valores entrecomillados
 // (los atributos de la captura real vienen partidos en varias líneas).
 const TAG_RE = /<[a-zA-Z][^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>/g;
-const SCRIPT_ELEMENT_RE = /<script\b[\s\S]*?<\/script\s*>/gi;
-const SCRIPT_OPEN_RE = /<script\b[^>]*>/gi;
+
+function atributosPermitidos(etiqueta) {
+  return ATRIBUTOS_GENERALES.concat(ATRIBUTOS_EXTRA[etiqueta] || []);
+}
+
+// Valor obligatorio de un atributo; null si su valor es libre.
+function valorFijado(etiqueta, atributo) {
+  if (atributo === "value") return "";
+  if (atributo === "src") return PLACEHOLDER.img;
+  if (atributo === "charset") return "windows-1252";
+  return null;
+}
+
+function nombreDeEtiqueta(tag) {
+  const m = tag.match(/^<\s*([a-zA-Z][\w:-]*)/);
+  return m ? m[1].toLowerCase() : "";
+}
+
+// Atributos de una etiqueta de apertura: [{ nombre, valor }], sin comillas y
+// con el valor null si el atributo no lleva «=».
+function leerAtributos(tag) {
+  let interior = tag.replace(/^<\s*[a-zA-Z][\w:-]*/, "");
+  if (interior.endsWith(">")) interior = interior.slice(0, -1);
+  interior = interior.replace(/\/\s*$/, "");
+
+  const atributos = [];
+  const re = /([a-zA-Z_:][-\w:.]*)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]+))?/g;
+  let m;
+  while ((m = re.exec(interior)) !== null) {
+    let valor = m[2];
+    if (valor === undefined) valor = null;
+    else if (valor[0] === '"' || valor[0] === "'") valor = valor.slice(1, -1);
+    atributos.push({ nombre: m[1].toLowerCase(), valor });
+  }
+  return atributos;
+}
+
+function normalizarValor(valor) {
+  return valor.replace(/\s+/g, " ").trim().replace(/"/g, "&quot;");
+}
+
+// Reescribe una etiqueta de apertura dejando solo los atributos permitidos.
+function limpiarEtiqueta(tag) {
+  const etiqueta = nombreDeEtiqueta(tag);
+  if (!etiqueta) return tag;
+  const permitidos = atributosPermitidos(etiqueta);
+
+  const conservados = [];
+  const vistos = new Set();
+  for (const atributo of leerAtributos(tag)) {
+    if (!permitidos.includes(atributo.nombre)) continue;
+    if (vistos.has(atributo.nombre)) continue;
+    vistos.add(atributo.nombre);
+
+    const fijado = valorFijado(etiqueta, atributo.nombre);
+    if (fijado !== null) {
+      if (atributo.valor === null && atributo.nombre !== "value") {
+        conservados.push(atributo.nombre);
+      } else {
+        conservados.push(atributo.nombre + '="' + (fijado === null ? "" : fijado) + '"');
+      }
+      continue;
+    }
+    if (atributo.valor === null) conservados.push(atributo.nombre);
+    else conservados.push(atributo.nombre + '="' + normalizarValor(atributo.valor) + '"');
+  }
+
+  return "<" + etiqueta + (conservados.length ? " " + conservados.join(" ") : "") + ">";
+}
+
+function quitarElemento(html, nombre) {
+  const bloque = new RegExp("<" + nombre + "\\b[\\s\\S]*?</" + nombre + "\\s*>", "gi");
+  const sinCerrar = new RegExp("<" + nombre + "\\b[^>]*>[\\s\\S]*$", "i");
+  return html.replace(bloque, "").replace(sinCerrar, "");
+}
+
+// Elimina el marcado peligroso y filtra los atributos de todo el documento.
+function limpiarMarcado(html) {
+  let salida = html;
+  for (const nombre of ELEMENTOS_CON_CODIGO) salida = quitarElemento(salida, nombre);
+  for (const nombre of ELEMENTOS_VACIOS) {
+    salida = salida.replace(new RegExp("<" + nombre + "\\b[^>]*>", "gi"), "");
+  }
+  for (const nombre of ELEMENTOS_DESENVOLTADOS) {
+    salida = salida.replace(new RegExp("</?" + nombre + "\\b[^>]*>", "gi"), "");
+  }
+  return salida.replace(TAG_RE, (tag) => limpiarEtiqueta(tag));
+}
+
+// --- sustitución de datos -------------------------------------------------
+
+function cifrasDe(tirada) {
+  let limpia = tirada.trim();
+  if (limpia.startsWith("+34")) limpia = limpia.slice(3);
+  else if (limpia.startsWith("0034")) limpia = limpia.slice(4);
+  return (limpia.match(/\d/g) || []).length;
+}
+
+function esIdentificadorNumerico(tirada) {
+  return cifrasDe(tirada) >= 7;
+}
+
+function sustituirPatrones(html) {
+  let salida = html.replace(RUTA_RE, PLACEHOLDER.ruta);
+  salida = salida.replace(NIE_RE, PLACEHOLDER.nie);
+  salida = salida.replace(DNI_RE, PLACEHOLDER.dni);
+  salida = salida.replace(EMAIL_RE, PLACEHOLDER.email);
+  salida = salida.replace(TIRADA_NUMERICA_RE, (tirada) =>
+    esIdentificadorNumerico(tirada) ? PLACEHOLDER.phone : tirada
+  );
+  return salida;
+}
+
+// --- extracción de la tabla de datos -------------------------------------
 
 function claseDeEtiqueta(etiqueta) {
   const m = etiqueta.match(/\bclass\s*=\s*("[^"]*"|'[^']*')/i);
   return m ? m[1].slice(1, -1) : "";
-}
-
-// Devuelve el marcado de cada <table> cuya class contiene «TableData»,
-// incluidas sus tablas anidadas.
-function extraerTablasDeDatos(html) {
-  const tablas = [];
-  const aperturaRe = /<table\b[^>]*>/gi;
-  let m;
-  while ((m = aperturaRe.exec(html)) !== null) {
-    if (!/tabledata/i.test(claseDeEtiqueta(m[0]))) continue;
-    const inicio = m.index;
-    const fin = finDeTabla(html, inicio + m[0].length);
-    tablas.push(html.slice(inicio, fin));
-    aperturaRe.lastIndex = fin;
-  }
-  return tablas;
 }
 
 function finDeTabla(html, desde) {
@@ -109,35 +236,20 @@ function finDeTabla(html, desde) {
   return html.length;
 }
 
-function neutralizarAtributos(tag) {
-  let salida = tag;
-  for (const nombre of ATRIBUTOS_CON_TOKEN) {
-    const re = new RegExp("(\\b" + nombre + "\\s*=\\s*)(\"[^\"]*\"|'[^']*'|[^\\s>]+)", "gi");
-    salida = salida.replace(re, (m, prefijo) => prefijo + '"' + PLACEHOLDER.attr + '"');
+// Marcado de cada <table> cuya class contiene «TableData», con sus tablas
+// anidadas.
+function extraerTablasDeDatos(html) {
+  const tablas = [];
+  const aperturaRe = /<table\b[^>]*>/gi;
+  let m;
+  while ((m = aperturaRe.exec(html)) !== null) {
+    if (!/tabledata/i.test(claseDeEtiqueta(m[0]))) continue;
+    const inicio = m.index;
+    const fin = finDeTabla(html, inicio + m[0].length);
+    tablas.push(html.slice(inicio, fin));
+    aperturaRe.lastIndex = fin;
   }
-  if (/^<input\b/i.test(tag)) {
-    salida = salida.replace(/(\bvalue\s*=\s*)("[^"]*"|'[^']*')/gi, (m, prefijo) => prefijo + '""');
-  }
-  if (/^<img\b/i.test(tag)) {
-    salida = salida.replace(/(\bsrc\s*=\s*)("[^"]*"|'[^']*'|[^\s>]+)/gi, (m, prefijo) => prefijo + '"' + PLACEHOLDER.img + '"');
-  }
-  return salida;
-}
-
-// Elimina scripts y neutraliza atributos (dentro de la tabla o de la página).
-function limpiarMarcado(html) {
-  let salida = html.replace(SCRIPT_ELEMENT_RE, "").replace(SCRIPT_OPEN_RE, "");
-  salida = salida.replace(TAG_RE, (tag) => neutralizarAtributos(tag));
-  return salida;
-}
-
-function sustituirPatrones(html) {
-  let salida = html;
-  salida = salida.replace(NIE_RE, PLACEHOLDER.nie);
-  salida = salida.replace(DNI_RE, PLACEHOLDER.dni);
-  salida = salida.replace(PHONE_RE, PLACEHOLDER.phone);
-  salida = salida.replace(EMAIL_RE, PLACEHOLDER.email);
-  return salida;
+  return tablas;
 }
 
 function documentoMinimo(tablas) {
@@ -172,65 +284,72 @@ function anonymizeHtml(html, opciones = {}) {
   return construirFixture(html).html;
 }
 
+// --- verificación ---------------------------------------------------------
+
 function buscar(html, re) {
   return html.match(new RegExp(re.source, re.flags)) || [];
 }
 
-// Marcado de cada etiqueta <nombre ...> presente en el documento.
-function etiquetasDe(html, nombre) {
+// Problemas de marcado: elementos prohibidos y atributos fuera de la lista
+// blanca (incluye tokens, url(), estilos, controladores de eventos y valores
+// que deberían estar vacíos o sustituidos).
+function problemasDeMarcado(html) {
+  const problemas = [];
   const re = new RegExp(TAG_RE.source, "gi");
-  const etiquetas = [];
   let m;
   while ((m = re.exec(html)) !== null) {
-    if (m[0].toLowerCase().startsWith("<" + nombre)) etiquetas.push(m[0]);
+    const etiqueta = nombreDeEtiqueta(m[0]);
+    if (!etiqueta) continue;
+    if (ELEMENTOS_PROHIBIDOS.includes(etiqueta)) {
+      problemas.push("elemento <" + etiqueta + "> prohibido en el fixture");
+      continue;
+    }
+    for (const atributo of leerAtributos(m[0])) {
+      if (!atributosPermitidos(etiqueta).includes(atributo.nombre)) {
+        problemas.push("atributo " + atributo.nombre + " no permitido en <" + etiqueta + ">");
+        continue;
+      }
+      const esperado = valorFijado(etiqueta, atributo.nombre);
+      if (esperado !== null && atributo.valor !== esperado) {
+        problemas.push("atributo " + atributo.nombre + " de <" + etiqueta + "> sin anonimizar");
+      }
+    }
   }
-  return etiquetas;
+  return problemas;
 }
 
-// Valores de un atributo, sin comillas.
-function valoresDeAtributo(html, nombre) {
-  const re = new RegExp("\\b" + nombre + "\\s*=\\s*(\"[^\"]*\"|'[^']*'|[^\\s>]+)", "gi");
-  const valores = [];
-  let m;
-  while ((m = re.exec(html)) !== null) {
-    let valor = m[1];
-    if (valor[0] === '"' || valor[0] === "'") valor = valor.slice(1, -1);
-    valores.push(valor);
-  }
-  return valores;
+function resumir(problemas) {
+  const cuenta = new Map();
+  for (const problema of problemas) cuenta.set(problema, (cuenta.get(problema) || 0) + 1);
+  return Array.from(cuenta, ([problema, veces]) => (veces > 1 ? veces + " x " + problema : problema));
 }
 
+// verify() no imprime los datos encontrados (podrían ser personales): solo
+// cuenta cuántos hay.
 function verify(html) {
   const problemas = [];
 
   const dnis = buscar(html, DNI_RE);
   const nies = buscar(html, NIE_RE);
-  const telefonos = buscar(html, PHONE_RE);
   const correos = buscar(html, EMAIL_RE);
+  const numericas = buscar(html, TIRADA_NUMERICA_RE).filter(esIdentificadorNumerico);
+  const rutas = buscar(html, /(?:\.\.?\/menus|nav)\//gi);
+  const urls = buscar(html, /url\(/gi);
   const scripts = buscar(html, /<script\b/gi);
-  const fotos = etiquetasDe(html, "img").flatMap((tag) => valoresDeAtributo(tag, "src"));
-  const fotosSinAnonimizar = fotos.filter((valor) => valor !== PLACEHOLDER.img);
-  const tokens = ATRIBUTOS_CON_TOKEN.reduce(
-    (total, nombre) => total + valoresDeAtributo(html, nombre).filter((valor) => valor !== PLACEHOLDER.attr).length,
-    0
-  );
-  const valores = etiquetasDe(html, "input")
-    .flatMap((tag) => valoresDeAtributo(tag, "value"))
-    .filter((valor) => valor !== "");
-  const sospechosos = SOSPECHOSOS.reduce((total, patron) => total + buscar(html, patron.re).length, 0);
 
-  if (dnis.length) problemas.push(dnis.length + " posible(s) DNI: " + dnis.slice(0, 3).join(", "));
-  if (nies.length) problemas.push(nies.length + " posible(s) NIE: " + nies.slice(0, 3).join(", "));
-  if (telefonos.length) problemas.push(telefonos.length + " posible(s) teléfono(s): " + telefonos.slice(0, 3).join(", "));
-  if (correos.length) problemas.push(correos.length + " posible(s) correo(s): " + correos.slice(0, 3).join(", "));
+  if (dnis.length) problemas.push(dnis.length + " posible(s) DNI sin anonimizar");
+  if (nies.length) problemas.push(nies.length + " posible(s) NIE sin anonimizar");
+  if (numericas.length) problemas.push(numericas.length + " identificador(es) numérico(s) sin anonimizar");
+  if (correos.length) problemas.push(correos.length + " posible(s) correo(s) sin anonimizar");
+  if (rutas.length) problemas.push(rutas.length + " ruta(s) de menú o navegación con token");
+  if (urls.length) problemas.push(urls.length + " url(...) sin eliminar");
   if (scripts.length) problemas.push(scripts.length + " etiqueta(s) <script> sin eliminar");
-  if (fotosSinAnonimizar.length) problemas.push(fotosSinAnonimizar.length + " imagen(es) con src no anonimizado");
-  if (tokens) problemas.push(tokens + " atributo(s) con token sin neutralizar (" + ATRIBUTOS_CON_TOKEN.join(", ") + ")");
-  if (valores.length) problemas.push(valores.length + " value de <input> sin vaciar");
-  if (sospechosos) problemas.push(sospechosos + " posible(s) identificador(es) con separadores: revísalos a mano");
+  problemas.push(...resumir(problemasDeMarcado(html)));
 
   return { ok: problemas.length === 0, problems: problemas };
 }
+
+// --- CLI ------------------------------------------------------------------
 
 function salidaPorDefecto(entrada) {
   return entrada.replace(/(\.html)?$/i, "") + ".anon.html";
@@ -278,7 +397,7 @@ function main() {
   fs.writeFileSync(destino, fixture.html, "latin1");
   console.log("Anonimizado: " + destino);
   console.log("Tablas de datos conservadas: " + fixture.tablas.length);
-  console.log("Verificación: sin DNIs, NIEs, teléfonos ni correos detectables.");
+  console.log("Verificación: sin identificadores, tokens ni enlaces de riesgo.");
   console.log("AVISO: revisa visualmente nombres y apellidos; el script no los detecta de forma fiable.");
 }
 
