@@ -147,6 +147,16 @@ Prioridad: **[M]** imprescindible v1 · **[S]** deseable v1 · **[C]** futuro.
     panel («cambiar menú asignado»).
   - Si el docente no encuentra el menú porque su perfil no lo tiene, la
     utilidad queda desactivada con explicación (RF-07).
+- **RF-15 [M] Trabajo invisible en segundo plano.** Cuando el docente pide
+  algo a través de la extensión, **su vista de Séneca no cambia**: la tarea se
+  ejecuta por detrás, sin moverlo de la pantalla en la que está.
+  - La extensión nunca navega la pestaña del docente ni simula clics en la
+    interfaz visible para llegar a los datos.
+  - Los datos se obtienen con peticiones GET en segundo plano desde la
+    propia extensión a páginas de Séneca (mismo dominio, con la sesión ya
+    iniciada), se analizan fuera de pantalla y solo se muestran en el panel.
+  - La pestaña activa se usa como contexto (RF-03), pero ninguna tarea exige
+    navegar a una página concreta para poder ejecutarse.
 
 ### Exportación y resultados
 
@@ -157,8 +167,9 @@ Prioridad: **[M]** imprescindible v1 · **[S]** deseable v1 · **[C]** futuro.
 - **RF-22 [M] Vista previa obligatoria.** Antes de descargar, la extensión
   muestra una previsualización (tabla o miniatura del PDF) con botones claros:
   «Descargar» / «Cancelar». Nunca descarga sin que el docente lo confirme.
-- **RF-23 [M] Progreso visible.** Las tareas largas (recorrer varias páginas
-  de Séneca) muestran una barra o contador de progreso y pueden cancelarse.
+- **RF-23 [M] Progreso visible.** Las tareas largas (pedir varias páginas en
+  segundo plano, RF-15) muestran una barra o contador de progreso y pueden
+  cancelarse en cualquier momento.
 - **RF-24 [M] Mensajes de error accionables.** Ante cualquier problema: qué
   falló, qué puede hacer el docente («no encuentro la tabla de calificaciones;
   comprueba que estás en X e inténtalo de nuevo»). Prohibido mostrar
@@ -198,7 +209,10 @@ puede contradecirlos.
 - **RP-07 [M] Garantía de solo lectura.** La extensión jamás envía
   formularios, peticiones POST de modificación ni simulaciones de clics que
   guarden cambios en Séneca. Arquitectura revisada para impedirlo por
-  construcción, no solo por promesa.
+  construcción, no solo por promesa. El trabajo en segundo plano (RF-15) usa
+  exclusivamente peticiones GET de una lista blanca declarada por cada
+  adaptador; cualquier URL o método fuera de esa lista se rechaza sin
+  ejecutarse.
 - **RP-08 [S] Botón «Olvidar todo».** Un botón en el panel borra
   instantáneamente cualquier dato que la extensión pudiera tener en memoria o
   en su almacenamiento local, y lo confirma con un mensaje claro.
@@ -225,8 +239,9 @@ puede contradecirlos.
     celda queda vacía y señalizada, no adivinada.
 - **RC-05 [M] No interferencia.** La extensión no modifica el DOM visible de
   Séneca, no inyecta banners salvo indicaciones propias mínimas y desactivables,
-  y no cambia estilos de la web. Séneca debe verse y funcionar igual con o sin
-  la extensión instalada.
+  y no cambia estilos de la web. Tampoco navega la pestaña del docente para
+  ejecutar tareas: el trabajo ocurre en segundo plano (RF-15). Séneca debe
+  verse y funcionar igual con o sin la extensión instalada.
 
 ## 7. Requisitos de usabilidad y accesibilidad (RU)
 
@@ -251,7 +266,10 @@ puede contradecirlos.
 
 - **RT-01 [M] Arquitectura de adaptadores.** Separación estricta:
   - Capa «adaptadores de lectura»: un módulo por zona de Séneca que convierte
-    el DOM de cada página en datos estructurados (JSON interno).
+    en datos estructurados (JSON interno) las páginas que obtiene con
+    peticiones GET en segundo plano y analiza fuera de pantalla, sin tocar
+    la pestaña del docente (RF-15). Cada adaptador declara su lista blanca
+    de URLs (RP-07).
   - Capa «formateadores»: convierten JSON a XLSX, CSV o PDF.
   - Capa «presentación»: panel y vistas previas.
   Cada adaptador se prueba y se rompe de forma aislada (ver RC-04).
@@ -325,6 +343,7 @@ La v1 se considera completa cuando:
 | Permisos amplios rechazados por las tiendas o desconfianza del usuario | Permisos mínimos y justificados (RP-03, RD-02) |
 | Público poco técnico abandona al primer problema | Mensajes accionables (RF-24), ayuda integrada (RF-05), onboarding de 3 frases (RU-05) |
 | Perfiles distintos (tutor, docente, dirección…) ven opciones diferentes en Séneca | Derivar la disponibilidad de tareas de lo que la sesión muestra realmente, nunca de listas fijas de perfiles (RF-07); fixtures por perfil en tests (RT-05) |
+| Las peticiones en segundo plano pudieran considerarse uso automatizado por Séneca | Solo GET a `juntadeandalucia.es` con la sesión existente, lista blanca por adaptador (RP-07), ritmo moderado y tarea cancelable (RF-23): mismo tipo de acceso que el navegador al navegar, sin credenciales y sin escrituras |
 
 ## 12. Fases sugeridas
 
@@ -374,3 +393,8 @@ La v1 se considera completa cuando:
   (p. ej. `feat/exportar-alumnado`); `main` queda reservado para la versión
   estable verificada. Los avances se integran en `main` solo cuando la
   funcionalidad está terminada y comprobada.
+- **D9.** Petición del propietario: las tareas pedidas a través de la
+  extensión no deben modificar la vista del docente. Se ejecutan por detrás
+  con peticiones en segundo plano (RF-15), exclusivamente GET de lista
+  blanca declarada por adaptador (RP-07), analizando las respuestas fuera
+  de pantalla.
