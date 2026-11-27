@@ -54,7 +54,7 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 | T4 | S2, S3 | 8b5ef9a · adaptador «Grupos de alumnos/as» → lista de `{grupo, materia, alumnos}` con tests | pendiente |
 | T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | 0080d12 · probada en vivo (L19) |
 | T10 | S7 | carga inicial ampliable guardada en el navegador (D13); Alumnado lee de ella; «Actualizar datos»; «Olvidar todo» (RP-08) | 6e89112 · probada en vivo (L19) |
-| T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS; «Olvidar todo» también accesible en «Preparar la extensión» con datos incompletos o de otra versión; no perder la carga buena anterior si falla una nueva | pendiente |
+| T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS; «Olvidar todo» también accesible en «Preparar la extensión» con datos incompletos o de otra versión; no perder la carga buena anterior si falla una nueva | c89a663 · falta repaso en vivo |
 
 ## Log
 
