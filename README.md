@@ -50,6 +50,15 @@ Consejería de Educación de la Junta de Andalucía.
 5. Tras cada cambio del código, pulsa el botón de recargar (↻) que aparece
    en la tarjeta de la extensión y vuelve a abrir el panel.
 
+### Elegir «Grupo - Materia»
+
+Con Séneca abierto, pulsa el icono de la extensión y entra en **Informes →
+Alumnado**: el panel busca en segundo plano tu pantalla «Grupo de
+Alumnos/as», te muestra tus grupos como «Grupo - Materia» con el número de
+alumnos y te deja elegir uno. Todo ocurre dentro de tu navegador, con tu
+sesión de Séneca y sin moverte de la pantalla en la que estás; las opciones de
+informes para el grupo elegido llegarán más adelante.
+
 ### Diagnóstico de conexión (prueba en vivo)
 
 El panel incluye **Probar conexión con «Grupos de alumnos/as»**. Busca ese
