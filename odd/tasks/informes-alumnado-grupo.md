@@ -44,8 +44,8 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 | T2 | S4 | `tools/anonymize.js` + test (primera versión) | 95697ca |
 | T3 | S2, S3 | captura del propietario recibida | — (gitignored) |
 | T6 | S4 | anonimizador: codificación + NIE + lista blanca de tabla; fixture `tests/fixtures/`; `npm test` | d9d69e7, 13cc967, 6cdf17e, 23bc77b |
-| T7 | S5, S6 | prueba en vivo: botón de diagnóstico en el panel (`chrome.scripting`, mismo origen) que muestra localmente pasos, errores y extracción | en curso |
-| T4 | S2, S3 | adaptador «Grupos de alumnos/as» → lista de `{grupo, materia, alumnos}` con tests | pendiente |
+| T7 | S5, S6 | prueba en vivo: botón de diagnóstico en el panel (`chrome.scripting`, mismo origen) que muestra localmente pasos, errores y extracción | 62f7502, 06c9903, 3a32d82, e712d1b · cerrada (L14, L15) |
+| T4 | S2, S3 | 8b5ef9a · adaptador «Grupos de alumnos/as» → lista de `{grupo, materia, alumnos}` con tests | pendiente |
 | T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | pendiente |
 | T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS | pendiente |
 
@@ -114,3 +114,7 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   1BACA - INGL1 23, 1BACA - TECN1 26, 2ESOB - HIST1 12, 2BACB - FISQ1 7, 4ESOX - MUSI1
   19, 4ESOY - MUSI1 28), idénticas al fixture; pantalla sin cambios. Pendiente:
   confirmación manual de menú/«Volver».
+- **L15** (verbatim) Comprobación manual tras la petición en segundo plano:
+  «Volver me devuelve a la pantalla anterior. Si navego un nivel pues me
+  vuelve a la pantalla principal pero si navego dos inveles me devuelve al
+  nivel anterior». Sin entrada fantasma en la pila del servidor: S5 cumplida.
