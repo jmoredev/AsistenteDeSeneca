@@ -96,10 +96,19 @@ Si una carga nueva falla (por ejemplo, al pulsar **Actualizar datos**), los
 datos buenos de la carga anterior **no se pierden**: se siguen usando en el
 menú y en Alumnado, y el panel dice qué elemento falló y de cuándo son los
 datos que se mantienen; para volver a intentarlo, pulsa **Actualizar datos**.
+Lo mismo pasa si el navegador no deja guardar la carga nueva (por ejemplo, sin
+espacio): se mantienen los datos anteriores, con su fecha, y el panel lo dice.
+
+Si lo que falla es la **lectura** de lo guardado, el panel lo explica («No se
+han podido leer los datos guardados. Cierra y vuelve a abrir el panel.») y
+desactiva **Cargar datos** y **Actualizar datos** para no sobrescribir sin
+saber qué hay guardado; **Olvidar todo** sigue disponible por si quieres
+empezar de cero.
 
 La lista de datos de la carga inicial está preparada para crecer: hoy solo
 tiene «Grupos de alumnos/as» y añadir otro elemento es una entrada más en
-`extension/carga-inicial.js`.
+`extension/carga-inicial.js`, declarando qué campos de cada fila se pueden
+guardar (sin esa lista no se guarda ninguna fila).
 
 ### Elegir «Grupo - Materia»
 
@@ -113,12 +122,13 @@ grupos no se cargaron, el panel lo explica y te remite a **Actualizar datos**.
 ### Diagnóstico de conexión (prueba en vivo)
 
 El panel incluye **Probar conexión con «Grupos de alumnos/as»**. Busca ese
-enlace del menú por su texto, pide la pantalla en segundo plano desde la
-propia página de Séneca (mismo origen, con tu sesión) y muestra en el panel
-los pasos, los errores, los grupos y materias extraídos y si tu pantalla
-cambió. El informe solo se ve en tu navegador: no se envía a ningún sitio y
-las direcciones aparecen con los tokens tapados (`nav/<token>`). Si quieres
-compartir el resultado, revísalo antes y copia solo lo necesario.
+enlace del menú por su texto **solo dentro de la propia página de Séneca**
+(nunca en otras webs incrustadas en la pestaña), pide la pantalla en segundo
+plano desde la propia página de Séneca (mismo origen, con tu sesión) y muestra
+en el panel los pasos, los errores, los grupos y materias extraídos y si tu
+pantalla cambió. El informe solo se ve en tu navegador: no se envía a ningún
+sitio y las direcciones aparecen con los tokens tapados (`nav/<token>`). Si
+quieres compartir el resultado, revísalo antes y copia solo lo necesario.
 
 La lectura de cada pantalla vive en `extension/seneca/` (adaptadores como
 `grupos-alumnos.js`), código puro que se prueba en Node con los fixtures
