@@ -1,14 +1,14 @@
 "use strict";
 
 // T7 live diagnostic (S5, S6 of odd/tasks/informes-alumnado-grupo.md).
-// Finds the «Materias que imparte» menu link by its visible text, fetches that
+// Finds the «Grupos de alumnos/as» menu link by its visible text, fetches that
 // screen in the background from the same Seneca page (same origin, session
 // cookie) and paints the report only in this popup. Every request is checked
 // against Seneca's origin first; nothing is sent anywhere else and the
 // teacher's page is never modified.
 
 (function (raiz) {
-  const TEXTO_ENLACE = "Materias que imparte";
+  const TEXTO_ENLACE = "Grupos de alumnos/as";
   const MAX_SALTOS = 2;
   const ESPERA_MS = 20000;
 

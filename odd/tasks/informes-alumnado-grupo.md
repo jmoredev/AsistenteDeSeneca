@@ -45,7 +45,7 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 | T3 | S2, S3 | captura del propietario recibida | — (gitignored) |
 | T6 | S4 | anonimizador: codificación + NIE + lista blanca de tabla; fixture `tests/fixtures/`; `npm test` | d9d69e7, 13cc967, 6cdf17e, 23bc77b |
 | T7 | S5, S6 | prueba en vivo: botón de diagnóstico en el panel (`chrome.scripting`, mismo origen) que muestra localmente pasos, errores y extracción | en curso |
-| T4 | S2, S3 | adaptador «Materias que imparte» → lista de `{grupo, materia, alumnos}` con tests | pendiente |
+| T4 | S2, S3 | adaptador «Grupos de alumnos/as» → lista de `{grupo, materia, alumnos}` con tests | pendiente |
 | T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | pendiente |
 | T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS | pendiente |
 
@@ -96,3 +96,15 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   Endurecimiento posterior por S6 (R1-1, R3-002..005, R4-001, R1-2): solo
   origen `https://seneca.juntadeandalucia.es`, límite de 20 s, decisión de
   saltos en funciones puras con tests. Pendiente: prueba en vivo del propietario.
+- **L12** Prueba en vivo (Brave): enlace en marco 0, `../menus/<token>`; un solo
+  GET, HTTP 200, `text/html;charset=ISO-8859-1`, 123980 bytes, sin redirección;
+  pantalla del docente sin cambios. Pero «Materias que imparte» devuelve una
+  tabla `Unidad | Curso | Materia`, no la captura del propietario (h1 «GRUPO DE
+  ALUMNOS/AS», columna «Alumnado de»): el enlace de L10 era solo el menú
+  lateral de esa página. Error de interpretación del orquestador.
+- **L13** Decisión del propietario: la lista «Grupo - Materia» sale de la
+  pantalla «Grupo de alumnos/as» (la capturada). Su enlace del menú lateral
+  es «Grupos de alumnos/as». El propietario lanzó la prueba desde la página
+  principal sin moverse, así que la comprobación manual de «Volver»/menú
+  sigue pendiente. El fixture `materias-que-imparte.html` tiene nombre
+  equivocado: renombrar en T4.

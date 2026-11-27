@@ -52,7 +52,7 @@ Consejería de Educación de la Junta de Andalucía.
 
 ### Diagnóstico de conexión (prueba en vivo)
 
-El panel incluye **Probar conexión con «Materias que imparte»**. Busca ese
+El panel incluye **Probar conexión con «Grupos de alumnos/as»**. Busca ese
 enlace del menú por su texto, pide la pantalla en segundo plano desde la
 propia página de Séneca (mismo origen, con tu sesión) y muestra en el panel
 los pasos, los errores, los grupos y materias extraídos y si tu pantalla
