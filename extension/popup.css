@@ -97,9 +97,46 @@ h3 {
   overflow-y: auto;
 }
 
-/* Selector «Grupo - Materia» (T5, S1) */
+/* Selector «Grupo - Materia» (T5, S1) y carga inicial (T10, S7) */
 
-.cargando,
+.progreso {
+  margin: 6px 0;
+  padding: 8px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: #f4f6f9;
+}
+
+.progreso-linea {
+  margin: 2px 0;
+  font-size: 0.9rem;
+}
+
+.progreso-cargando {
+  color: var(--texto-suave);
+}
+
+.progreso-error {
+  color: var(--error);
+}
+
+.explicacion {
+  margin: 6px 0 8px;
+}
+
+.carga-fecha {
+  margin: 4px 0 6px;
+  color: var(--texto-suave);
+}
+
+.secundario .nota {
+  display: block;
+  font-size: 0.8rem;
+  color: inherit;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
 .vacio {
   margin: 6px 0;
   color: var(--texto-suave);

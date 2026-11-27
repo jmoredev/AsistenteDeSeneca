@@ -7,7 +7,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { CARGANDO, VACIO, vistaDeGrupos, textoSeleccion } = require("./alumnado-vista.js");
+const { VACIO, SIN_CARGA, vistaDeGrupos, vistaDesdeCarga, textoSeleccion } = require("./alumnado-vista.js");
 
 test("la lista sale en el orden de la tabla con su etiqueta y su número de alumnos (S1)", () => {
   const vista = vistaDeGrupos({
@@ -75,6 +75,59 @@ test("sin grupos se explica en español y se nombra la pantalla de Séneca (S1)"
   assert.equal(vistaDeGrupos({ grupos: [], avisos: [] }).vacio, VACIO);
 });
 
-test("el estado de carga se anuncia con un texto visible (RU-04)", () => {
-  assert.equal(CARGANDO, "Cargando tus grupos…");
+// --- Alumnado lee la carga inicial guardada (S7), sin pedir nada a Séneca ---
+
+function cargaGuardada(elementoGrupos) {
+  return {
+    version: 1,
+    cargadoEl: "2025-11-27T09:05:00.000Z",
+    elementos: elementoGrupos === undefined ? {} : { grupos: elementoGrupos },
+  };
+}
+
+test("con los grupos guardados, Alumnado pinta la misma lista y los mismos avisos (S7)", () => {
+  const vista = vistaDesdeCarga(
+    cargaGuardada({
+      ok: true,
+      datos: {
+        grupos: [
+          { grupo: "1ESOA", materia: "MATE1", alumnos: 28, etiqueta: "1ESOA - MATE1" },
+          { grupo: "2BACB", materia: "FISQ1", alumnos: 7, etiqueta: "2BACB - FISQ1" },
+        ],
+      },
+      avisos: ["Fila 2: la materia «Química» no coincide con la de «Alumnado de»."],
+      error: "",
+    })
+  );
+
+  assert.deepEqual(vista, {
+    error: "",
+    avisos: ["Fila 2: la materia «Química» no coincide con la de «Alumnado de»."],
+    vacio: "",
+    grupos: [
+      { etiqueta: "1ESOA - MATE1", alumnos: 28, textoAlumnos: "28 alumnos" },
+      { etiqueta: "2BACB - FISQ1", alumnos: 7, textoAlumnos: "7 alumnos" },
+    ],
+  });
+});
+
+test("si los grupos guardados no se pudieron cargar, Alumnado lo explica y remite a «Actualizar datos» (S7)", () => {
+  const vista = vistaDesdeCarga(
+    cargaGuardada({ ok: false, datos: {}, avisos: [], error: "No encuentro el menú «Grupos de alumnos/as»." })
+  );
+
+  assert.deepEqual(vista.grupos, []);
+  assert.deepEqual(vista.avisos, []);
+  assert.equal(vista.vacio, "");
+  assert.match(vista.error, /No se pudieron cargar tus grupos/);
+  assert.match(vista.error, /Grupos de alumnos\/as/);
+  assert.match(vista.error, /Actualizar datos/);
+});
+
+test("sin carga guardada, Alumnado lo explica y remite a «Actualizar datos» (S7)", () => {
+  const vacia = vistaDesdeCarga(null);
+  assert.deepEqual(vacia.grupos, []);
+  assert.equal(vacia.error, SIN_CARGA);
+  assert.match(vacia.error, /Actualizar datos/);
+  assert.deepEqual(vistaDesdeCarga(cargaGuardada(undefined)), vacia);
 });

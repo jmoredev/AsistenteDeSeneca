@@ -50,14 +50,33 @@ Consejería de Educación de la Junta de Andalucía.
 5. Tras cada cambio del código, pulsa el botón de recargar (↻) que aparece
    en la tarjeta de la extensión y vuelve a abrir el panel.
 
+### Preparar la extensión la primera vez
+
+La primera vez que abras el panel con Séneca, la extensión mostrará
+**Preparar la extensión** con el botón **Cargar datos**: hace una carga
+inicial leyendo algunos datos de tu cuenta (hoy, tus «Grupos de alumnos/as»)
+para no tener que pedirlos a Séneca cada vez. Esos datos se guardan **solo en
+este navegador** (`chrome.storage.local`), nunca se sincronizan ni se envían a
+ningún sitio, y no incluyen datos personales del alumnado: solo grupo, materia
+y número de alumnos. Al terminar verás la fecha de la carga y el botón
+**Actualizar datos**, que vuelve a leerlos cuando quieras.
+
+Si desinstalas la extensión, esos datos se borran con ella. También puedes
+borrarlos en cualquier momento con **Olvidar todo**, que los elimina del
+navegador y deja el panel como el primer día.
+
+La lista de datos de la carga inicial está preparada para crecer: hoy solo
+tiene «Grupos de alumnos/as» y añadir otro elemento es una entrada más en
+`extension/carga-inicial.js`.
+
 ### Elegir «Grupo - Materia»
 
 Con Séneca abierto, pulsa el icono de la extensión y entra en **Informes →
-Alumnado**: el panel busca en segundo plano tu pantalla «Grupo de
-Alumnos/as», te muestra tus grupos como «Grupo - Materia» con el número de
-alumnos y te deja elegir uno. Todo ocurre dentro de tu navegador, con tu
-sesión de Séneca y sin moverte de la pantalla en la que estás; las opciones de
-informes para el grupo elegido llegarán más adelante.
+Alumnado**: el panel muestra tus grupos como «Grupo - Materia» con el número
+de alumnos, leídos de la carga inicial guardada (así no se pide nada a Séneca
+cada vez), y te deja elegir uno. Todo ocurre dentro de tu navegador; las
+opciones de informes para el grupo elegido llegarán más adelante. Si los
+grupos no se cargaron, el panel lo explica y te remite a **Actualizar datos**.
 
 ### Diagnóstico de conexión (prueba en vivo)
 
