@@ -440,3 +440,13 @@ test("fixture del repositorio: solo la tabla de datos y sin datos reales", (t) =
 
   assert.equal((html.match(/<tr\b/gi) || []).length, 9, "se esperan 1 fila de cabecera y 8 de datos");
 });
+
+test("una tirada numérica no se come el texto que la sigue (revisión R3-NUMERIC-TRAILING)", () => {
+  const salida = anonymizeHtml(tablaCon("<tr><td>654321098 alumno</td><td>654321098 (móvil)</td><td>(954) 123 456.</td></tr>"));
+  assert.ok(salida.includes(PLACEHOLDER.phone + " alumno"), "se perdió el espacio tras el teléfono");
+  assert.ok(salida.includes(PLACEHOLDER.phone + " (móvil)"), "se perdió el paréntesis tras el teléfono");
+  assert.ok(salida.includes(PLACEHOLDER.phone + "."), "se perdió el punto final");
+  // Solo la tabla: la cabecera fija declara charset="windows-1252".
+  const tabla = salida.slice(salida.indexOf("<table"));
+  assert.equal(/\d{3}/.test(tabla), false, "queda un número sin sustituir");
+});

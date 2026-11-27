@@ -61,7 +61,8 @@ const EMAIL_RE = /\b[\w.+-]+@[\w-]+(?:\.[\w-]+)*\b/g;
 // Cualquier tirada de cifras con sus separadores habituales. Si al quitar
 // espacios, puntos, guiones, paréntesis y un prefijo +34/0034 quedan 7 cifras
 // o más, es un identificador (teléfono, DNI sin letra, expediente...).
-const TIRADA_NUMERICA_RE = /\+?\d[\d\s.()\-]*/g;
+// Empieza y termina en cifra: nunca se come el espacio o signo que la sigue.
+const TIRADA_NUMERICA_RE = /\+?\d(?:[\d\s.()\-]*\d)?/g;
 
 // Los sustitutos están elegidos para que no vuelvan a casar con los patrones:
 // así verify() puede demostrar que la salida no tiene identificadores.
