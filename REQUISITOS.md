@@ -225,7 +225,13 @@ puede contradecirlos.
   su carpeta de descargas, como cualquier otro archivo. Única excepción:
   preferencias de uso no personales y sin datos del alumnado (p. ej. la
   asignación de menús de RF-14), guardadas solo en el almacenamiento local de
-  la propia extensión y borrables con «Olvidar todo» (RP-08).
+  la propia extensión y borrables con «Olvidar todo» (RP-08). Segunda
+  excepción (D13): la carga inicial de datos de trabajo del docente sin datos
+  personales del alumnado (hoy, sus grupos: grupo, materia y número de
+  alumnos, con la fecha de carga), con las mismas condiciones: solo en el
+  almacenamiento local de la extensión, nunca sincronizada ni enviada, y
+  borrable con «Olvidar todo». Cada elemento nuevo de la carga inicial debe
+  justificar que no contiene datos personales del alumnado.
 - **RP-05 [M] Datos de menores.** El proyecto se rige por el RGPD y la
   LOPDGDD como diseño base: minimización, no registro de datos personales en
   logs, y documentación clara para el docente de qué datos maneja la
@@ -465,3 +471,8 @@ La v1 se considera completa cuando:
   quedan fuera de v1 o se tratan aparte con revisión específica.
 - **D12.** Decisión del propietario: el repositorio se publica bajo licencia
   **GPL-3.0** (copyleft: cualquier derivado debe seguir siendo abierto).
+- **D13.** Decisión del propietario: la primera vez que se usa la extensión
+  se hace una carga inicial de datos (hoy, los grupos de alumnos del docente)
+  que se guarda en el almacenamiento local de la extensión para poder operar
+  sin pedirla cada vez. Excepción acotada a RP-04 sin datos personales del
+  alumnado y con «Olvidar todo» (RP-08) obligatorio.

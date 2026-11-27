@@ -36,6 +36,12 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   petición sale a otro origen que Séneca; las URL se muestran con los tokens
   tapados.
 
+- **S7** (verbatim del propietario, L16): «La primera vez que se use la extensión hay que hacer una carga inicial de datos para poder operar con ella, uno de esos datos es cargar los grupos de alumnos para despuñes poder elegir que queremos hacer con cada uno de ellos. Si posteriormente hay más elementos que son necesarios en la carga inicial te lo indicaré». Implementación: la
+  carga inicial es una lista ampliable de elementos (hoy solo «Grupos de
+  alumnos/as»); se guarda solo en el navegador (`chrome.storage.local`), con
+  fecha de la última carga y un botón para volver a cargar; Alumnado lee los
+  grupos guardados sin pedir a Séneca cada vez.
+
 ## Tasks
 
 | ID | Spec | Ruta | Commit |
@@ -46,8 +52,9 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 | T6 | S4 | anonimizador: codificación + NIE + lista blanca de tabla; fixture `tests/fixtures/`; `npm test` | d9d69e7, 13cc967, 6cdf17e, 23bc77b |
 | T7 | S5, S6 | prueba en vivo: botón de diagnóstico en el panel (`chrome.scripting`, mismo origen) que muestra localmente pasos, errores y extracción | 62f7502, 06c9903, 3a32d82, e712d1b · cerrada (L14, L15) |
 | T4 | S2, S3 | 8b5ef9a · adaptador «Grupos de alumnos/as» → lista de `{grupo, materia, alumnos}` con tests | pendiente |
-| T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | pendiente |
-| T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS | pendiente |
+| T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | 0080d12 · probada en vivo (L19) |
+| T10 | S7 | carga inicial ampliable guardada en el navegador (D13); Alumnado lee de ella; «Actualizar datos»; «Olvidar todo» (RP-08) | 6e89112 · probada en vivo (L19) |
+| T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS; «Olvidar todo» también accesible en «Preparar la extensión» con datos incompletos o de otra versión; no perder la carga buena anterior si falla una nueva | pendiente |
 
 ## Log
 
@@ -118,3 +125,13 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   «Volver me devuelve a la pantalla anterior. Si navego un nivel pues me
   vuelve a la pantalla principal pero si navego dos inveles me devuelve al
   nivel anterior». Sin entrada fantasma en la pila del servidor: S5 cumplida.
+- **L16** (verbatim): «La primera vez que se use la extensión hay que hacer una carga inicial de datos para poder operar con ella, uno de esos datos es cargar los grupos de alumnos para despuñes poder elegir que queremos hacer con cada uno de ellos. Si posteriormente hay más elementos que son necesarios en la carga inicial te lo indicaré»
+- **L17** T5 en 0080d12. El trabajador detectó que 8b5ef9a (T4) había borrado
+  `destinoDe` y roto el diagnóstico en vivo; arreglado en 0080d12 (salida del
+  diagnóstico idéntica en 6 escenarios simulados). Lección: tras tocar el
+  diagnóstico, volver a probarlo en vivo.
+- **L18** Conflicto S7 vs RP-04 [M] (sin persistencia). Decisión del propietario:
+  excepción acotada (D13 en REQUISITOS): guardar solo la carga inicial sin
+  datos personales del alumnado, con «Olvidar todo» (RP-08) dentro de T10.
+- **L19** (verbatim) Prueba en vivo de 6e89112 (carga inicial, Alumnado, Actualizar
+  datos, Olvidar todo, diagnóstico): «Perfecto, funciona perfectamente».

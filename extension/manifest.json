@@ -7,6 +7,6 @@
     "default_popup": "popup.html",
     "default_title": "Ayudante de Séneca"
   },
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["https://*.juntadeandalucia.es/*"]
 }
