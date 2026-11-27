@@ -53,7 +53,7 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 | T7 | S5, S6 | prueba en vivo: botón de diagnóstico en el panel (`chrome.scripting`, mismo origen) que muestra localmente pasos, errores y extracción | 62f7502, 06c9903, 3a32d82, e712d1b · cerrada (L14, L15) |
 | T4 | S2, S3 | 8b5ef9a · adaptador «Grupos de alumnos/as» → lista de `{grupo, materia, alumnos}` con tests | pendiente |
 | T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | 0080d12 · falta prueba en vivo |
-| T10 | S7 | carga inicial ampliable guardada en el navegador; Alumnado lee de ella; botón «Actualizar datos» | pendiente |
+| T10 | S7 | carga inicial ampliable guardada en el navegador (D13); Alumnado lee de ella; «Actualizar datos»; «Olvidar todo» (RP-08) | pendiente |
 | T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS | pendiente |
 
 ## Log
@@ -130,3 +130,6 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   `destinoDe` y roto el diagnóstico en vivo; arreglado en 0080d12 (salida del
   diagnóstico idéntica en 6 escenarios simulados). Lección: tras tocar el
   diagnóstico, volver a probarlo en vivo.
+- **L18** Conflicto S7 vs RP-04 [M] (sin persistencia). Decisión del propietario:
+  excepción acotada (D13 en REQUISITOS): guardar solo la carga inicial sin
+  datos personales del alumnado, con «Olvidar todo» (RP-08) dentro de T10.
