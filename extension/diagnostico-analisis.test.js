@@ -5,7 +5,16 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { enmascarar, partirAlumnadoDe, analizarFilas, textoVisible } = require("./diagnostico-analisis.js");
+const {
+  enmascarar,
+  partirAlumnadoDe,
+  analizarFilas,
+  textoVisible,
+  urlPermitida,
+  siguienteSalto,
+} = require("./diagnostico-analisis.js");
+
+const BASE = "https://seneca.juntadeandalucia.es/seneca/menus/abc";
 
 test("enmascarar tapa los tokens de navegación y los valores de la consulta", () => {
   const salida = enmascarar(
@@ -18,6 +27,26 @@ test("enmascarar tapa los tokens de navegación y los valores de la consulta", (
       "y ../acciones/<token> y PaginaVuelta.jsp?ALEATORIO=<valor>&MODO=<valor>#x"
   );
   assert.equal(enmascarar("Materias que imparte"), "Materias que imparte");
+  assert.equal(enmascarar("/seneca/otra/AbCdEfGhIjKlMnOpQrSt-_9/fin"), "/seneca/otra/<token>/fin");
+});
+
+test("urlPermitida solo acepta el origen de Séneca", () => {
+  assert.equal(urlPermitida("https://seneca.juntadeandalucia.es/seneca/nav/x"), true);
+  assert.equal(urlPermitida("https://otra.juntadeandalucia.es/seneca/nav/x"), false);
+  assert.equal(urlPermitida("http://seneca.juntadeandalucia.es/seneca/nav/x"), false);
+  assert.equal(urlPermitida("https://seneca.juntadeandalucia.es.ejemplo.com/"), false);
+  assert.equal(urlPermitida("no es url"), false);
+});
+
+test("siguienteSalto sigue solo un destino inequívoco", () => {
+  assert.equal(siguienteSalto('<table class="x TableData"></table> ../nav/abc', BASE), null);
+  assert.equal(siguienteSalto('<a href="../nav/ab1">x</a> ../nav/ab1', BASE), "https://seneca.juntadeandalucia.es/seneca/nav/ab1");
+  assert.equal(siguienteSalto("../nav/uno y ../nav/dos", BASE), null);
+  assert.equal(
+    siguienteSalto('<meta http-equiv="refresh" content="0;url=https://malo.example/robar">', BASE),
+    "https://malo.example/robar"
+  );
+  assert.equal(siguienteSalto("sin destino", BASE), null);
 });
 
 test("partirAlumnadoDe toma el grupo del penúltimo elemento y la materia del anterior", () => {
@@ -52,6 +81,7 @@ test("textoVisible convierte <br> en espacio para no pegar elementos (revisión 
   assert.equal(textoVisible(celda), "2025/26 / Lengua / 2ºESO\u00a0B / 20 alumnos\\as");
   assert.deepEqual(partirAlumnadoDe(textoVisible(celda)), { grupo: "2ºESO B", materia: "Lengua", alumnos: 20, elementos: 4 });
   assert.equal(textoVisible("Alumnado<br>de"), "Alumnado de");
+  assert.equal(textoVisible('<span title="a>b">Lengua</span>'), "Lengua");
   assert.equal(textoVisible("A &amp; B &lt;x&gt; &quot;c&quot; &#186; &#xBA;"), 'A & B <x> "c" º º');
 });
 

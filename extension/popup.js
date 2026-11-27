@@ -24,8 +24,11 @@ async function main() {
       boton.disabled = true;
       salida.hidden = false;
       salida.textContent = "";
-      await Diagnostico.ejecutar(tab.id, salida);
-      boton.disabled = false;
+      try {
+        await Diagnostico.ejecutar(tab.id, salida);
+      } finally {
+        boton.disabled = false;
+      }
     });
   } else {
     estado.textContent = "La extensión solo funciona dentro de Séneca.";

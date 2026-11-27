@@ -12,7 +12,37 @@
   function enmascarar(texto) {
     return String(texto)
       .replace(/\b(nav|menus|acciones)\/[A-Za-z0-9_-]+/g, "$1/<token>")
+      .replace(/\/[A-Za-z0-9_-]{20,}/g, "/<token>")
       .replace(/([?&][^=&#\s]+=)[^&#\s]*/g, "$1<valor>");
+  }
+
+  const ORIGEN_SENECA = "https://seneca.juntadeandalucia.es";
+
+  // S6: background requests may only target Seneca's own origin.
+  function urlPermitida(url) {
+    try {
+      return new URL(url).origin === ORIGEN_SENECA;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Next hop when a response is not the data screen yet: only one unambiguous
+  // nav/<token> or meta-refresh target, resolved against the response URL.
+  function siguienteSalto(html, base) {
+    if (/class="[^"]*\bTableData\b/.test(html)) return null;
+    const crudos = Array.from(html.matchAll(/(?:https?:\/\/[^"'\s<>]+\/)?(?:\.\.\/)?nav\/[A-Za-z0-9_-]+/g), (m) => m[0]);
+    const refresco = /http-equiv=["']?refresh["']?[^>]*url=([^"'>\s]+)/i.exec(html);
+    if (refresco) crudos.push(refresco[1]);
+    const candidatos = new Set();
+    for (const crudo of crudos) {
+      try {
+        candidatos.add(new URL(crudo, base).href);
+      } catch (e) {
+        // Not a URL: ignore it.
+      }
+    }
+    return candidatos.size === 1 ? Array.from(candidatos)[0] : null;
   }
 
   // "… / materia / grupo / N alumnos\as" -> { grupo, materia, alumnos }.
@@ -39,7 +69,7 @@
   function textoVisible(html) {
     return String(html)
       .replace(/<br\b[^>]*>/gi, " ")
-      .replace(/<[^>]*>/g, "")
+      .replace(/<(?:[^>"']|"[^"]*"|'[^']*')*>/g, "")
       .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entidad, nombre) => {
         if (nombre[0] === "#") {
           const hexadecimal = nombre[1].toLowerCase() === "x";
@@ -75,7 +105,7 @@
     };
   }
 
-  const api = { enmascarar, partirAlumnadoDe, analizarFilas, textoVisible };
+  const api = { enmascarar, partirAlumnadoDe, analizarFilas, textoVisible, urlPermitida, siguienteSalto };
   if (typeof module === "object" && module.exports) module.exports = api;
   else raiz.DiagnosticoAnalisis = api;
 })(globalThis);

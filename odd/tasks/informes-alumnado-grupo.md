@@ -89,3 +89,10 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   en Windows-1252 aunque la meta diga UTF-8. Se desconoce si `menus/<token>`
   devuelve los datos o un paso intermedio: el diagnóstico sigue como mucho un
   salto inequívoco y lo informa.
+- **L11** Diagnóstico en 62f7502. Revisión nativa `review-3639227bda884fa0`
+  (alto): R3-001 (`<br>` pegaba elementos) corregido en 06c9903; el validador
+  dirigido lo rechazó sin motivo visible → estado `escalated`, parada
+  terminal `native_stop_required` (decisión del propietario antes de publicar).
+  Endurecimiento posterior por S6 (R1-1, R3-002..005, R4-001, R1-2): solo
+  origen `https://seneca.juntadeandalucia.es`, límite de 20 s, decisión de
+  saltos en funciones puras con tests. Pendiente: prueba en vivo del propietario.
