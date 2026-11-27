@@ -14,3 +14,7 @@ build/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Capturas del docente: nunca entran al repositorio (RT-09)
+fixtures-entrada/
+*.anon.html

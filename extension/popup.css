@@ -1,0 +1,255 @@
+/* Accessible, large-type panel. WCAG AA contrast (RU-03). */
+
+:root {
+  --fondo: #ffffff;
+  --texto: #1a1a1a;
+  --texto-suave: #444444;
+  --acento: #1d4e89;
+  --error: #8a1c1c;
+  --error-fondo: #fdecec;
+  --borde: #c8d0dc;
+}
+
+:focus-visible {
+  outline: 3px solid #0b3d6b;
+  outline-offset: 2px;
+}
+
+/* Class rules below set `display`; without this, elements with the
+   `hidden` attribute (e.g. «Reintentar», «Olvidar todo») would stay visible. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  font-family: system-ui, "Segoe UI", Arial, sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+  width: 320px;
+  margin: 0;
+  padding: 12px;
+  font-size: 105%;
+  line-height: 1.45;
+}
+
+h1 {
+  font-size: 1.15rem;
+  margin: 0 0 4px;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 12px 0 4px;
+  color: var(--acento);
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 8px 0 4px;
+  color: var(--texto-suave);
+}
+
+#estado {
+  margin: 0 0 8px;
+  color: var(--texto-suave);
+}
+
+.aviso {
+  background: #fff3cd;
+  border: 1px solid #b08d00;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.tarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  font-size: 1rem;
+  padding: 10px 12px;
+  margin: 4px 0;
+  border: 2px solid var(--acento);
+  border-radius: 8px;
+  background: var(--acento);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.tarea:disabled {
+  background: #e9e9e9;
+  color: #555555;
+  border-color: #999999;
+  cursor: not-allowed;
+}
+
+.tarea .nota {
+  display: block;
+  font-size: 0.85rem;
+  color: inherit;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.diagnostico {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.8rem;
+  background: #f4f6f9;
+  border: 1px solid #c8d0dc;
+  border-radius: 6px;
+  padding: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* Selector «Grupo - Materia» (T5, S1) y carga inicial (T10, S7) */
+
+.progreso {
+  margin: 6px 0;
+  padding: 8px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: #f4f6f9;
+}
+
+.progreso-linea {
+  margin: 2px 0;
+  font-size: 0.9rem;
+}
+
+.progreso-cargando {
+  color: var(--texto-suave);
+}
+
+.progreso-error {
+  color: var(--error);
+}
+
+.explicacion {
+  margin: 6px 0 8px;
+}
+
+.carga-fecha {
+  margin: 4px 0 6px;
+  color: var(--texto-suave);
+}
+
+.secundario .nota {
+  display: block;
+  font-size: 0.8rem;
+  color: inherit;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.vacio {
+  margin: 6px 0;
+  color: var(--texto-suave);
+}
+
+.avisos {
+  margin: 6px 0;
+}
+
+.avisos .aviso {
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.error {
+  margin: 6px 0;
+  background: var(--error-fondo);
+  border: 1px solid var(--error);
+  color: var(--error);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.secundario {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  font-size: 1rem;
+  margin: 4px 0;
+  padding: 8px 12px;
+  border: 2px solid var(--acento);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--acento);
+  cursor: pointer;
+}
+
+.secundario:hover {
+  background: #eef2f8;
+}
+
+.secundario:disabled {
+  color: #555555;
+  border-color: #999999;
+  cursor: not-allowed;
+}
+
+.grupos {
+  margin: 6px 0;
+}
+
+.grupo {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  text-align: left;
+  font-size: 1rem;
+  margin: 4px 0;
+  padding: 8px 12px;
+  border: 2px solid var(--acento);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--texto);
+  cursor: pointer;
+}
+
+.grupo:hover {
+  background: #eef2f8;
+}
+
+.grupo[aria-pressed="true"] {
+  background: var(--acento);
+  color: #ffffff;
+}
+
+.grupo-etiqueta {
+  display: block;
+  font-weight: 600;
+}
+
+.grupo-alumnos {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  margin-top: 2px;
+}
+
+.grupo[aria-pressed="true"] .grupo-alumnos {
+  color: #ffffff;
+}
+
+.seleccion {
+  margin: 6px 0;
+  font-size: 0.95rem;
+  border-left: 4px solid var(--acento);
+  padding-left: 8px;
+}
+
+footer {
+  margin-top: 12px;
+  border-top: 1px solid #dddddd;
+  padding-top: 8px;
+}
+
+footer p {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  margin: 0;
+}

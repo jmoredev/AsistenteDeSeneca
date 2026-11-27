@@ -1,0 +1,92 @@
+"use strict";
+
+// Pure helpers of the T7 live diagnostic (S2, S6 of
+// odd/tasks/informes-alumnado-grupo.md). Synthetic data only.
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const {
+  enmascarar,
+  partirAlumnadoDe,
+  analizarFilas,
+  textoVisible,
+  urlPermitida,
+  siguienteSalto,
+} = require("./diagnostico-analisis.js");
+
+const BASE = "https://seneca.juntadeandalucia.es/seneca/menus/abc";
+
+test("enmascarar tapa los tokens de navegación y los valores de la consulta", () => {
+  const salida = enmascarar(
+    "https://seneca.juntadeandalucia.es/seneca/nav/Tok3nDePrueba_x-3 y ../menus/AbC123_-z " +
+      "y ../acciones/Zz9 y PaginaVuelta.jsp?ALEATORIO=0.123&MODO=2#x"
+  );
+  assert.equal(
+    salida,
+    "https://seneca.juntadeandalucia.es/seneca/nav/<token> y ../menus/<token> " +
+      "y ../acciones/<token> y PaginaVuelta.jsp?ALEATORIO=<valor>&MODO=<valor>#x"
+  );
+  assert.equal(enmascarar("Materias que imparte"), "Materias que imparte");
+  assert.equal(enmascarar("/seneca/otra/AbCdEfGhIjKlMnOpQrSt-_9/fin"), "/seneca/otra/<token>/fin");
+});
+
+test("urlPermitida solo acepta el origen de Séneca", () => {
+  assert.equal(urlPermitida("https://seneca.juntadeandalucia.es/seneca/nav/x"), true);
+  assert.equal(urlPermitida("https://otra.juntadeandalucia.es/seneca/nav/x"), false);
+  assert.equal(urlPermitida("http://seneca.juntadeandalucia.es/seneca/nav/x"), false);
+  assert.equal(urlPermitida("https://seneca.juntadeandalucia.es.ejemplo.com/"), false);
+  assert.equal(urlPermitida("no es url"), false);
+});
+
+test("siguienteSalto sigue solo un destino inequívoco", () => {
+  assert.equal(siguienteSalto('<table class="x TableData"></table> ../nav/abc', BASE), null);
+  assert.equal(siguienteSalto('<a href="../nav/ab1">x</a> ../nav/ab1', BASE), "https://seneca.juntadeandalucia.es/seneca/nav/ab1");
+  assert.equal(siguienteSalto("../nav/uno y ../nav/dos", BASE), null);
+  assert.equal(
+    siguienteSalto('<meta http-equiv="refresh" content="0;url=https://malo.example/robar">', BASE),
+    "https://malo.example/robar"
+  );
+  assert.equal(siguienteSalto("sin destino", BASE), null);
+});
+
+test("partirAlumnadoDe toma el grupo del penúltimo elemento y la materia del anterior", () => {
+  const r = partirAlumnadoDe("2025/26\u00a0/ Matemáticas /  1ºESO A / 25 alumnos\\as ");
+  assert.deepEqual(r, { grupo: "1ºESO A", materia: "Matemáticas", alumnos: 25, elementos: 4 });
+});
+
+test("partirAlumnadoDe avisa si el texto no tiene el formato esperado", () => {
+  assert.deepEqual(partirAlumnadoDe("Sin separadores"), {
+    error: "«Alumnado de» no tiene el formato «… / materia / grupo / N alumnos\\as»",
+  });
+});
+
+test("analizarFilas cruza «Alumnado de» con la columna «Materia»", () => {
+  const cabeceras = ["Alumnado de", "Descripción personalizada", "Materia", "Actividad", "Fecha de creación"];
+  const filas = [
+    ["2025/26 / Lengua / 2ºESO B / 20 alumnos\\as", "", "Lengua", "", "01/09/2025"],
+    ["2025/26 / Física / 4ºESO C / 18 alumnos\\as", "", "Química", "", "01/09/2025"],
+    ["roto", "", "Música", "", ""],
+  ];
+  assert.deepEqual(analizarFilas(cabeceras, filas), {
+    filas: [
+      { grupo: "2ºESO B", materia: "Lengua", alumnos: 20, coincide: true },
+      { grupo: "4ºESO C", materia: "Química", alumnos: 18, coincide: false },
+      { fila: 3, error: "«Alumnado de» no tiene el formato «… / materia / grupo / N alumnos\\as»" },
+    ],
+  });
+});
+
+test("textoVisible convierte <br> en espacio para no pegar elementos (revisión R3-001)", () => {
+  const celda = '<span class="texto-SNC">2025/26<br>/ Lengua<BR/>/<br />2ºESO&nbsp;B / 20 alumnos\\as</span>';
+  assert.equal(textoVisible(celda), "2025/26 / Lengua / 2ºESO\u00a0B / 20 alumnos\\as");
+  assert.deepEqual(partirAlumnadoDe(textoVisible(celda)), { grupo: "2ºESO B", materia: "Lengua", alumnos: 20, elementos: 4 });
+  assert.equal(textoVisible("Alumnado<br>de"), "Alumnado de");
+  assert.equal(textoVisible('<span title="a>b">Lengua</span>'), "Lengua");
+  assert.equal(textoVisible("A &amp; B &lt;x&gt; &quot;c&quot; &#186; &#xBA;"), 'A & B <x> "c" º º');
+});
+
+test("analizarFilas informa de la columna que falta", () => {
+  assert.deepEqual(analizarFilas(["Alumnado de", "Actividad"], [["a / b / c / 1 alumnos\\as", "x"]]), {
+    error: "No encuentro la columna «Materia». Cabeceras: Alumnado de | Actividad",
+  });
+});

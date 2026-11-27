@@ -152,9 +152,11 @@ Prioridad: **[M]** imprescindible v1 · **[S]** deseable v1 · **[C]** futuro.
   ejecuta por detrás, sin moverlo de la pantalla en la que está.
   - La extensión nunca navega la pestaña del docente ni simula clics en la
     interfaz visible para llegar a los datos.
-  - Los datos se obtienen con peticiones GET en segundo plano desde la
-    propia extensión a páginas de Séneca (mismo dominio, con la sesión ya
-    iniciada), se analizan fuera de pantalla y solo se muestran en el panel.
+  - Los datos se obtienen con peticiones GET en segundo plano que la extensión
+    lanza, mediante `chrome.scripting`, en el marco de la propia página de
+    Séneca (mismo origen y misma sesión ya iniciada, sin service worker): la
+    pestaña no navega ni cambia de pantalla. Las respuestas se analizan fuera
+    de pantalla y solo se muestran en el panel.
   - La pestaña activa se usa como contexto (RF-03), pero ninguna tarea exige
     navegar a una página concreta para poder ejecutarse.
 - **RF-18 [M] Sesión caducada durante una tarea.** Si alguna petición en
@@ -216,16 +218,26 @@ puede contradecirlos.
   procesa ni ve contraseñas. Funciona exclusivamente con la sesión que el
   docente ya tiene abierta.
 - **RP-03 [M] Minimización de permisos.** El manifiesto solo pide los
-  permisos imprescindibles: acceso a `*.juntadeandalucia.es`, almacenamiento
-  local de la propia extensión y descargas. Sin permisos de «leer y cambiar
-  todos tus datos en todos los sitios web», sin pestañas, sin historial.
+  permisos imprescindibles: acceso al host de Séneca
+  (`https://seneca.juntadeandalucia.es/*`, no todo `juntadeandalucia.es`),
+  `activeTab` y `scripting` para leer en segundo plano la pantalla que el
+  docente ya tiene abierta, y `storage` para la carga inicial de D13. Sin
+  permisos de «leer y cambiar todos tus datos en todos los sitios web», sin
+  `tabs`, sin historial. El permiso `downloads` no se pide porque todavía no
+  hay descargas: se añadirá con la exportación (RF-20).
 - **RP-04 [M] Sin persistencia por defecto.** Los datos extraídos viven en
   memoria durante la tarea y desaparecen al cerrar el panel. Los datos solo
   se guardan cuando el docente pulsa «Descargar» y el navegador los guarda en
   su carpeta de descargas, como cualquier otro archivo. Única excepción:
   preferencias de uso no personales y sin datos del alumnado (p. ej. la
   asignación de menús de RF-14), guardadas solo en el almacenamiento local de
-  la propia extensión y borrables con «Olvidar todo» (RP-08).
+  la propia extensión y borrables con «Olvidar todo» (RP-08). Segunda
+  excepción (D13): la carga inicial de datos de trabajo del docente sin datos
+  personales del alumnado (hoy, sus grupos: grupo, materia y número de
+  alumnos, con la fecha de carga), con las mismas condiciones: solo en el
+  almacenamiento local de la extensión, nunca sincronizada ni enviada, y
+  borrable con «Olvidar todo». Cada elemento nuevo de la carga inicial debe
+  justificar que no contiene datos personales del alumnado.
 - **RP-05 [M] Datos de menores.** El proyecto se rige por el RGPD y la
   LOPDGDD como diseño base: minimización, no registro de datos personales en
   logs, y documentación clara para el docente de qué datos maneja la
@@ -242,7 +254,10 @@ puede contradecirlos.
   ejecutarse.
 - **RP-08 [S] Botón «Olvidar todo».** Un botón en el panel borra
   instantáneamente cualquier dato que la extensión pudiera tener en memoria o
-  en su almacenamiento local, y lo confirma con un mensaje claro.
+  en su almacenamiento local, y lo confirma con un mensaje claro. También está
+  en «Preparar la extensión» siempre que haya algo guardado, aunque la carga
+  esté incompleta o sea de otra versión del formato: el docente nunca se ve
+  obligado a completar una carga para poder borrar.
 - **RP-09 [M] Declaración de privacidad.** Texto de privacidad en español,
   apto para no técnicos, visible desde la ficha de la tienda y desde el
   panel: «Nada de lo que ves en Séneca sale de tu ordenador».
@@ -252,8 +267,10 @@ puede contradecirlos.
 - **RC-01 [M] Chrome, Edge y Brave.** Base común Manifest V3. Un único código
   fuente, sin bifurcaciones por navegador salvo ajustes de manifiesto.
 - **RC-02 [M] Firefox.** Mismo código base con ajustes de manifiesto
-  (identificador de navegador, adaptaciones menores de API). Publicada en
-  Add-ons de Mozilla (AMO).
+  (identificador de navegador, adaptaciones menores de API). Hoy son
+  `browser_specific_settings.gecko` con un identificador estable y
+  `strict_min_version` 115.0 (Firefox ESR con Manifest V3 por defecto).
+  Publicada en Add-ons de Mozilla (AMO).
 - **RC-03 [M] Solo con sesión iniciada.** Sin sesión, la extensión no intenta
   nada: informa (RF-02) y se detiene.
 - **RC-04 [M] Tolerancia a cambios de Séneca.**
@@ -300,11 +317,15 @@ puede contradecirlos.
   - Capa «formateadores»: convierten JSON a XLSX, CSV o PDF.
   - Capa «presentación»: panel y vistas previas.
   Cada adaptador se prueba y se rompe de forma aislada (ver RC-04).
-- **RT-02 [M] Manifest V3** con service worker mínimo y sin estado persistente
-  en él; los datos viven en la pestaña y en el panel.
-- **RT-03 [M] Código común multi-navegador** con un build que genera dos
-  manifiestos (Chromium y Firefox) a partir de una sola base. Sin duplicar
-  lógica por navegador.
+- **RT-02 [M] Manifest V3** sin service worker: la extensión no lo necesita,
+  todo ocurre en la pestaña y en el panel. Los datos de trabajo viven en el
+  panel y, solo la carga inicial de D13, en el almacenamiento local de la
+  extensión; nada de estado persistente en segundo plano.
+- **RT-03 [M] Código común multi-navegador** con un único código fuente y,
+  hoy, un único manifiesto que incluye los ajustes que pide Firefox
+  (`browser_specific_settings`); si un navegador exigiera un ajuste
+  incompatible, un build generará dos manifiestos desde la misma base. Sin
+  duplicar lógica por navegador.
 - **RT-04 [M] Dependencias mínimas y empaquetadas.** Solo librerías
   auditables, incluidas dentro de la extensión (nada cargado por red, ver
   RP-06). Justificar cada una en el README.
@@ -345,9 +366,9 @@ puede contradecirlos.
   seguridad del canal.
 - **RD-02 [M] Expediente de tienda.** Ficha con capturas, descripción en
   español, política de privacidad (RP-09) y justificación clara del permiso
-  sobre `juntadeandalucia.es` («solo funciona dentro de Séneca, que es donde
-  están tus datos») y del uso de WebAssembly local para generar los PDF
-  (RT-08), único permiso adicional de CSP.
+  sobre el host `seneca.juntadeandalucia.es` («solo funciona dentro de Séneca,
+  que es donde están tus datos») y del uso de WebAssembly local para generar
+  los PDF (RT-08), único permiso adicional de CSP.
 - **RD-03 [S] Instrucciones de instalación guiada** paso a paso con capturas
   para docentes sin experiencia.
 - **RD-04 [M] Canal de ayuda y avisos de incidencias** (p. ej. repositorio
@@ -396,7 +417,7 @@ La v1 se considera completa cuando:
 | Permisos amplios rechazados por las tiendas o desconfianza del usuario | Permisos mínimos y justificados (RP-03, RD-02) |
 | Público poco técnico abandona al primer problema | Mensajes accionables (RF-24), ayuda integrada (RF-05), onboarding de 3 frases (RU-05) |
 | Perfiles distintos (tutor, docente, dirección…) ven opciones diferentes en Séneca | Derivar la disponibilidad de tareas de lo que la sesión muestra realmente, nunca de listas fijas de perfiles (RF-07); fixtures por perfil en tests (RT-05) |
-| Las peticiones en segundo plano pudieran considerarse uso automatizado por Séneca | Solo GET a `juntadeandalucia.es` con la sesión existente, lista blanca por adaptador (RP-07), ritmo moderado y tarea cancelable (RF-23): mismo tipo de acceso que el navegador al navegar, sin credenciales y sin escrituras |
+| Las peticiones en segundo plano pudieran considerarse uso automatizado por Séneca | Solo GET a `seneca.juntadeandalucia.es` con la sesión existente, lista blanca por adaptador (RP-07), ritmo moderado y tarea cancelable (RF-23): mismo tipo de acceso que el navegador al navegar, sin credenciales y sin escrituras |
 | Motor WASM (Typst): tamaño de la extensión y revisión de tiendas por CSP especial | Motor y fuentes empaquetados y auditados (RP-06, RT-08), justificación explícita en ficha (RD-02), tamaño comprimido razonable y pruebas de compilación en tests (RT-05) |
 | Algunos informes de Séneca pueden generarse mediante POST, hoy prohibido por RP-07 | Medir los flujos reales en la Fase 0 (D11): las descargas que exijan POST quedan fuera de v1 o se tratan aparte con revisión específica |
 
@@ -465,3 +486,8 @@ La v1 se considera completa cuando:
   quedan fuera de v1 o se tratan aparte con revisión específica.
 - **D12.** Decisión del propietario: el repositorio se publica bajo licencia
   **GPL-3.0** (copyleft: cualquier derivado debe seguir siendo abierto).
+- **D13.** Decisión del propietario: la primera vez que se usa la extensión
+  se hace una carga inicial de datos (hoy, los grupos de alumnos del docente)
+  que se guarda en el almacenamiento local de la extensión para poder operar
+  sin pedirla cada vez. Excepción acotada a RP-04 sin datos personales del
+  alumnado y con «Olvidar todo» (RP-08) obligatorio.

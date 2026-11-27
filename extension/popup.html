@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Ayudante de Séneca</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>Ayudante de Séneca</h1>
+    <p id="estado" aria-live="polite"></p>
+  </header>
+
+  <p id="aviso" class="aviso" hidden></p>
+
+  <!-- Progreso de la carga inicial y avisos de lo que falló (S7, RU-04). -->
+  <div id="carga-progreso" class="progreso" aria-live="polite" hidden></div>
+  <p id="carga-fallos" class="error" role="alert" hidden></p>
+  <!-- Si falla una carga nueva se mantienen los datos anteriores y el aviso
+       remite a «Actualizar datos» del menú (sin botón duplicado, L21). -->
+  <p id="carga-mensaje" class="aviso" aria-live="polite" hidden></p>
+
+  <section id="primer-uso" aria-labelledby="primer-uso-titulo" hidden>
+    <h2 id="primer-uso-titulo">Preparar la extensión</h2>
+    <p class="explicacion">
+      La extensión lee algunos datos de Séneca una sola vez y los guarda solo
+      en este navegador. No se envían a ningún sitio y puedes borrarlos cuando
+      quieras.
+    </p>
+    <button id="cargar-datos" class="tarea" type="button">Cargar datos</button>
+    <!-- «Olvidar todo» (RP-08) también aquí: si hay datos guardados de una
+         carga incompleta o de otra versión, el docente debe poder borrarlos
+         sin que la extensión le exija cargar antes (T9). -->
+    <button id="olvidar-todo-primer-uso" class="secundario" type="button" hidden>
+      <span>Olvidar todo</span>
+      <span class="nota">Borra del navegador los datos guardados.</span>
+    </button>
+  </section>
+
+  <nav id="menu" hidden aria-label="Utilidades">
+    <section aria-labelledby="carga-titulo">
+      <h2 id="carga-titulo">Datos de Séneca</h2>
+      <p id="carga-fecha" class="carga-fecha"></p>
+      <button id="actualizar-datos" class="secundario" type="button">
+        <span id="actualizar-datos-etiqueta">Actualizar datos</span>
+        <span class="nota">Vuelve a leerlos de Séneca.</span>
+      </button>
+      <button id="olvidar-todo" class="secundario" type="button">
+        <span id="olvidar-todo-etiqueta">Olvidar todo</span>
+        <span class="nota">Borra del navegador los datos guardados.</span>
+      </button>
+    </section>
+
+    <section aria-labelledby="informes">
+      <h2 id="informes">Informes</h2>
+      <button id="alumnado" class="tarea">
+        Alumnado
+        <span id="alumnado-nota" class="nota">Elige «Grupo - Materia» de los
+        datos ya cargados.</span>
+      </button>
+
+      <div id="alumnado-avisos" class="avisos" hidden></div>
+      <p id="alumnado-error" class="error" role="alert" hidden></p>
+      <div id="alumnado-lista" class="grupos" role="group" aria-label="Tus grupos de Séneca" hidden></div>
+      <p id="alumnado-vacio" class="vacio" hidden></p>
+      <p id="alumnado-seleccion" class="seleccion" aria-live="polite" hidden></p>
+    </section>
+
+    <section aria-labelledby="diagnostico-titulo">
+      <h2 id="diagnostico-titulo">Diagnóstico</h2>
+      <button id="diagnostico" class="tarea">
+        Probar conexión con «Grupos de alumnos/as»
+        <span class="nota">El resultado solo se muestra aquí; no se envía a
+        ningún sitio.</span>
+      </button>
+      <pre id="diagnostico-salida" class="diagnostico" aria-live="polite" hidden></pre>
+    </section>
+  </nav>
+
+  <footer>
+    <p>Herramienta independiente, sin relación oficial con la Consejería de
+    Educación de la Junta de Andalucía. Nada sale de tu navegador.</p>
+  </footer>
+
+  <script src="diagnostico-analisis.js"></script>
+  <script src="sitio-seneca.js"></script>
+  <script src="seneca/peticion.js"></script>
+  <script src="seneca/grupos-alumnos.js"></script>
+  <script src="alumnado-vista.js"></script>
+  <script src="carga-inicial.js"></script>
+  <script src="diagnostico.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
