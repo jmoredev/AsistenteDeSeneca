@@ -5,7 +5,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { enmascarar, partirAlumnadoDe, analizarFilas } = require("./diagnostico-analisis.js");
+const { enmascarar, partirAlumnadoDe, analizarFilas, textoVisible } = require("./diagnostico-analisis.js");
 
 test("enmascarar tapa los tokens de navegación y los valores de la consulta", () => {
   const salida = enmascarar(
@@ -45,6 +45,14 @@ test("analizarFilas cruza «Alumnado de» con la columna «Materia»", () => {
       { fila: 3, error: "«Alumnado de» no tiene el formato «… / materia / grupo / N alumnos\\as»" },
     ],
   });
+});
+
+test("textoVisible convierte <br> en espacio para no pegar elementos (revisión R3-001)", () => {
+  const celda = '<span class="texto-SNC">2025/26<br>/ Lengua<BR/>/<br />2ºESO&nbsp;B / 20 alumnos\\as</span>';
+  assert.equal(textoVisible(celda), "2025/26 / Lengua / 2ºESO\u00a0B / 20 alumnos\\as");
+  assert.deepEqual(partirAlumnadoDe(textoVisible(celda)), { grupo: "2ºESO B", materia: "Lengua", alumnos: 20, elementos: 4 });
+  assert.equal(textoVisible("Alumnado<br>de"), "Alumnado de");
+  assert.equal(textoVisible("A &amp; B &lt;x&gt; &quot;c&quot; &#186; &#xBA;"), 'A & B <x> "c" º º');
 });
 
 test("analizarFilas informa de la columna que falta", () => {

@@ -58,15 +58,16 @@
   const limpiar = (t) => String(t || "").replace(/\s+/g, " ").trim();
 
   function leerTabla(doc) {
+    const texto = (celda) => raiz.DiagnosticoAnalisis.textoVisible(celda.innerHTML);
     const tabla = doc.querySelector("table.TableData");
     if (!tabla) return null;
-    let cabeceras = Array.from(tabla.querySelectorAll("thead th")).map((th) => limpiar(th.textContent));
+    let cabeceras = Array.from(tabla.querySelectorAll("thead th")).map(texto);
     if (cabeceras.length === 0) {
       const primera = tabla.querySelector("tr");
-      cabeceras = primera ? Array.from(primera.querySelectorAll("th")).map((th) => limpiar(th.textContent)) : [];
+      cabeceras = primera ? Array.from(primera.querySelectorAll("th")).map(texto) : [];
     }
     const filas = Array.from(tabla.querySelectorAll("tr"))
-      .map((tr) => Array.from(tr.querySelectorAll("td")).map((td) => limpiar(td.textContent)))
+      .map((tr) => Array.from(tr.querySelectorAll("td")).map(texto))
       .filter((celdas) => celdas.length > 0);
     return { cabeceras, filas };
   }

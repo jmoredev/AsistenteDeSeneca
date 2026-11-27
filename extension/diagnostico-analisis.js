@@ -32,6 +32,26 @@
     };
   }
 
+  const ENTIDADES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: "\u00a0" };
+
+  // Visible text of a cell's HTML: <br> becomes a space so separators never
+  // glue together (S2); tags are dropped and basic entities decoded.
+  function textoVisible(html) {
+    return String(html)
+      .replace(/<br\b[^>]*>/gi, " ")
+      .replace(/<[^>]*>/g, "")
+      .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entidad, nombre) => {
+        if (nombre[0] === "#") {
+          const hexadecimal = nombre[1].toLowerCase() === "x";
+          return String.fromCodePoint(parseInt(nombre.slice(hexadecimal ? 2 : 1), hexadecimal ? 16 : 10));
+        }
+        const clave = nombre.toLowerCase();
+        return Object.prototype.hasOwnProperty.call(ENTIDADES, clave) ? ENTIDADES[clave] : entidad;
+      })
+      .replace(/[ \t\r\n]+/g, " ")
+      .trim();
+  }
+
   function indiceDe(cabeceras, nombre) {
     return cabeceras.findIndex((c) => String(c).replace(/\s+/g, " ").trim() === nombre);
   }
@@ -55,7 +75,7 @@
     };
   }
 
-  const api = { enmascarar, partirAlumnadoDe, analizarFilas };
+  const api = { enmascarar, partirAlumnadoDe, analizarFilas, textoVisible };
   if (typeof module === "object" && module.exports) module.exports = api;
   else raiz.DiagnosticoAnalisis = api;
 })(globalThis);
