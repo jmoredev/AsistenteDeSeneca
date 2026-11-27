@@ -19,7 +19,7 @@ const {
 } = require("./anonymize.js");
 
 const HERRAMIENTA = path.join(__dirname, "anonymize.js");
-const FIXTURE = path.join(__dirname, "..", "tests", "fixtures", "materias-que-imparte.html");
+const FIXTURE = path.join(__dirname, "..", "tests", "fixtures", "grupos-de-alumnos.html");
 
 const CABECERAS = [
   "Alumnado de",
@@ -420,7 +420,7 @@ test("CLI: escribe el fixture y sale con 0 cuando todo está limpio", (t) => {
 
 test("fixture del repositorio: solo la tabla de datos y sin datos reales", (t) => {
   if (!fs.existsSync(FIXTURE)) {
-    assert.fail("falta el fixture tests/fixtures/materias-que-imparte.html (genéralo con tools/anonymize.js)");
+    assert.fail("falta el fixture tests/fixtures/grupos-de-alumnos.html (genéralo con tools/anonymize.js)");
   }
   const html = fs.readFileSync(FIXTURE, "latin1");
 

@@ -57,63 +57,17 @@
     }
   }
 
-  const limpiar = (t) => String(t || "").replace(/\s+/g, " ").trim();
-
-  function destinoDe(enlace) {
-    const crudo = enlace.menulink || (enlace.href && enlace.href !== "#" ? enlace.href : "");
-    if (!crudo) return "";
-    try {
-      return new URL(crudo, enlace.base).href;
-    } catch (e) {
-      return "";
-    }
-  }
-
-  function leerTabla(doc) {
-    const texto = (celda) => raiz.DiagnosticoAnalisis.textoVisible(celda.innerHTML);
-    const tabla = doc.querySelector("table.TableData");
-    if (!tabla) return null;
-    let cabeceras = Array.from(tabla.querySelectorAll("thead th")).map(texto);
-    if (cabeceras.length === 0) {
-      const primera = tabla.querySelector("tr");
-      cabeceras = primera ? Array.from(primera.querySelectorAll("th")).map(texto) : [];
-    }
-    const filas = Array.from(tabla.querySelectorAll("tr"))
-      .map((tr) => Array.from(tr.querySelectorAll("td")).map(texto))
-      .filter((celdas) => celdas.length > 0);
-    return { cabeceras, filas };
-  }
-
+  // The reading of the screen is the adapter's job (S1, S2): the same pure
+  // code runs in the Node tests and here, without DOMParser.
   function informarExtraccion(html, decir) {
-    const { enmascarar, analizarFilas } = raiz.DiagnosticoAnalisis;
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    if (doc.querySelector('input[type="password"]')) {
-      decir("✖ La respuesta es la pantalla de acceso: no se reconoció tu sesión.");
+    const extraido = raiz.SenecaGruposAlumnos.extraerGrupos(html);
+    if (extraido.error) {
+      decir(`✖ ${extraido.error}`);
       return;
     }
-    const tabla = leerTabla(doc);
-    if (!tabla) {
-      const h1 = doc.querySelector("h1");
-      decir(
-        `✖ No aparece la tabla de datos. Título: «${enmascarar(limpiar(doc.title))}»; ` +
-          `h1: «${enmascarar(limpiar(h1 && h1.textContent))}».`
-      );
-      return;
-    }
-    const analisis = analizarFilas(tabla.cabeceras, tabla.filas);
-    if (analisis.error) {
-      decir(`✖ ${analisis.error}`);
-      return;
-    }
-    decir(`3. Extraído (${analisis.filas.length} filas):`);
-    for (const f of analisis.filas) {
-      if (f.error) decir(`   ✖ Fila ${f.fila}: ${f.error}`);
-      else
-        decir(
-          `   ${f.coincide ? "✔" : "⚠"} ${f.grupo} - ${f.materia} (${f.alumnos} alumnos)` +
-            `${f.coincide ? "" : " · la materia no coincide con «Alumnado de»"}`
-        );
-    }
+    decir(`3. Extraído (${extraido.grupos.length} filas):`);
+    for (const grupo of extraido.grupos) decir(`   ✔ ${grupo.etiqueta} (${grupo.alumnos} alumnos)`);
+    for (const aviso of extraido.avisos) decir(`   ⚠ ${aviso}`);
   }
 
   async function ejecutar(tabId, salida) {

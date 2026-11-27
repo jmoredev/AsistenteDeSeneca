@@ -60,6 +60,10 @@ cambió. El informe solo se ve en tu navegador: no se envía a ningún sitio y
 las direcciones aparecen con los tokens tapados (`nav/<token>`). Si quieres
 compartir el resultado, revísalo antes y copia solo lo necesario.
 
+La lectura de cada pantalla vive en `extension/seneca/` (adaptadores como
+`grupos-alumnos.js`), código puro que se prueba en Node con los fixtures
+anonimizados de `tests/fixtures/` (por ejemplo `grupos-de-alumnos.html`).
+
 ### Pasar una pantalla de Séneca al proyecto (sin exponer datos)
 
 1. En la pantalla de Séneca que interesa, copia la URL del navegador
