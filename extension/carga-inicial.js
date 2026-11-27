@@ -184,6 +184,45 @@
     return fecha === "" ? "" : `Datos cargados el ${fecha}`;
   }
 
+  // Hay algo guardado que «Olvidar todo» (RP-08) puede borrar: sirve cualquier
+  // carga, aunque esté incompleta o sea de una versión anterior del formato,
+  // porque el panel la ofrece también desde «Preparar la extensión» (T9).
+  function hayDatosQueOlvidar(carga) {
+    return Boolean(carga) && typeof carga === "object";
+  }
+
+  // Qué se hace con el resultado de una carga nueva (T9): si la nueva está
+  // completa se guarda y sustituye a la anterior; si falla y había una carga
+  // buena, se conserva la buena (no se pierde lo que ya funcionaba) y se
+  // explica qué falló y de cuándo son los datos que se mantienen. Si es la
+  // primera carga, el fallo se guarda como siempre, para poder reintentar.
+  function textoConservada(nueva, anterior) {
+    const fallos = textoFallos(fallosDeCarga(nueva));
+    const cuando = anterior ? formatearFecha(anterior.cargadoEl) : "";
+    const mantiene =
+      cuando === "" ? "Se mantienen los datos de la última carga." : `Se mantienen los datos cargados el ${cuando}.`;
+    return `${fallos || MENSAJE_SIN_CARGA} ${mantiene}`;
+  }
+
+  // Aplica la carga nueva sobre la guardada con el almacén inyectado.
+  // Devuelve { carga, conservada, aviso }: `aviso` es el texto para el panel y
+  // `conservada` indica que la carga de pantalla no se ha tocado.
+  async function aplicarCarga(opciones) {
+    const anterior = opciones.anterior || null;
+    const nueva = opciones.nueva || null;
+    const guardar = opciones.guardar;
+
+    if (estaCompleta(nueva)) {
+      await guardar(nueva);
+      return { carga: nueva, conservada: false, aviso: "" };
+    }
+    if (estaCompleta(anterior)) {
+      return { carga: anterior, conservada: true, aviso: textoConservada(nueva, anterior) };
+    }
+    if (nueva) await guardar(nueva);
+    return { carga: nueva || anterior, conservada: false, aviso: "" };
+  }
+
   // Ejecuta la carga inicial: un elemento detrás de otro, anotando cada fallo
   // sin detener los demás. Las dependencias se inyectan (S7):
   //   pedir(textoEnlace) -> { ok, html } | { ok: false, error }
@@ -295,6 +334,9 @@
     textoFallos,
     formatearFecha,
     textoCargadoEl,
+    hayDatosQueOlvidar,
+    textoConservada,
+    aplicarCarga,
     ejecutarCarga,
     olvidar,
   };

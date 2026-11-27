@@ -16,6 +16,13 @@
   <!-- Progreso de la carga inicial y avisos de lo que falló (S7, RU-04). -->
   <div id="carga-progreso" class="progreso" aria-live="polite" hidden></div>
   <p id="carga-fallos" class="error" role="alert" hidden></p>
+  <!-- Si falla una carga nueva se mantienen los datos anteriores: se ofrece
+       reintentar aquí, porque «Cargar datos» vive en «Preparar la extensión»
+       y con datos buenos conservados esa sección está oculta (T9). -->
+  <button id="reintentar-carga" class="secundario" type="button" hidden>
+    <span id="reintentar-etiqueta">Reintentar</span>
+    <span class="nota">Vuelve a leer de Séneca los datos que fallaron.</span>
+  </button>
   <p id="carga-mensaje" class="aviso" aria-live="polite" hidden></p>
 
   <section id="primer-uso" aria-labelledby="primer-uso-titulo" hidden>
@@ -26,6 +33,13 @@
       quieras.
     </p>
     <button id="cargar-datos" class="tarea" type="button">Cargar datos</button>
+    <!-- «Olvidar todo» (RP-08) también aquí: si hay datos guardados de una
+         carga incompleta o de otra versión, el docente debe poder borrarlos
+         sin que la extensión le exija cargar antes (T9). -->
+    <button id="olvidar-todo-primer-uso" class="secundario" type="button" hidden>
+      <span>Olvidar todo</span>
+      <span class="nota">Borra del navegador los datos guardados.</span>
+    </button>
   </section>
 
   <nav id="menu" hidden aria-label="Utilidades">
@@ -74,6 +88,7 @@
   </footer>
 
   <script src="diagnostico-analisis.js"></script>
+  <script src="sitio-seneca.js"></script>
   <script src="seneca/peticion.js"></script>
   <script src="seneca/grupos-alumnos.js"></script>
   <script src="alumnado-vista.js"></script>

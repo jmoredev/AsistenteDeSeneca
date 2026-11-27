@@ -50,6 +50,31 @@ Consejería de Educación de la Junta de Andalucía.
 5. Tras cada cambio del código, pulsa el botón de recargar (↻) que aparece
    en la tarjeta de la extensión y vuelve a abrir el panel.
 
+### Probar la extensión en Firefox
+
+Firefox necesita que el manifiesto lleve un identificador
+(`browser_specific_settings.gecko.id`): esta extensión usa
+`ayudante-seneca@asistentedeseneca.local`, que no es un buzón real y se
+mantiene igual en cada versión (AMO lo exige). La versión mínima es Firefox
+115 (ESR), que soporta Manifest V3 con `chrome.scripting` y `storage`. No hay
+script en segundo plano.
+
+1. Abre `about:debugging#/runtime/this-firefox` y pulsa **Cargar complemento
+temporal…**.
+2. Selecciona `E:\Dev\AsistenteDeSeneca\extension\manifest.json`.
+3. Abre Séneca con tu sesión iniciada y pulsa el icono de la extensión.
+
+### Permisos que pide
+
+- Acceso **solo** a `https://seneca.juntadeandalucia.es/*`: ningún otro host,
+  tampoco el resto de `juntadeandalucia.es`.
+- `activeTab` y `scripting`: leer en segundo plano la pantalla de Séneca que ya
+  tienes abierta, desde su propio marco, sin moverte de ella.
+- `storage`: guardar solo la carga inicial en este navegador (ver más abajo).
+
+No pide `tabs`, ni historial, ni acceso a «todos los sitios web», ni permiso de
+descargas (todavía no hay descargas).
+
 ### Preparar la extensión la primera vez
 
 La primera vez que abras el panel con Séneca, la extensión mostrará
@@ -63,7 +88,14 @@ y número de alumnos. Al terminar verás la fecha de la carga y el botón
 
 Si desinstalas la extensión, esos datos se borran con ella. También puedes
 borrarlos en cualquier momento con **Olvidar todo**, que los elimina del
-navegador y deja el panel como el primer día.
+navegador y deja el panel como el primer día; ese botón aparece tanto en el
+menú normal como en **Preparar la extensión** en cuanto hay algo guardado
+(aunque la carga anterior esté incompleta o sea de otra versión).
+
+Si una carga nueva falla (por ejemplo, al pulsar **Actualizar datos**), los
+datos buenos de la carga anterior **no se pierden**: se siguen usando en el
+menú y en Alumnado, y el panel dice qué elemento falló y de cuándo son los
+datos que se mantienen, con un botón **Reintentar**.
 
 La lista de datos de la carga inicial está preparada para crecer: hoy solo
 tiene «Grupos de alumnos/as» y añadir otro elemento es una entrada más en

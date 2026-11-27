@@ -8,5 +8,11 @@
     "default_title": "Ayudante de Séneca"
   },
   "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": ["https://*.juntadeandalucia.es/*"]
+  "host_permissions": ["https://seneca.juntadeandalucia.es/*"],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ayudante-seneca@asistentedeseneca.local",
+      "strict_min_version": "115.0"
+    }
+  }
 }
