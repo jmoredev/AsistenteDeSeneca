@@ -108,3 +108,9 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   principal sin moverse, así que la comprobación manual de «Volver»/menú
   sigue pendiente. El fixture `materias-que-imparte.html` tiene nombre
   equivocado: renombrar en T4.
+- **L14** Segunda prueba en vivo (e712d1b, Brave, desde la página principal):
+  enlace «Grupos de alumnos/as» en marco 0; un solo GET, HTTP 200,
+  ISO-8859-1, 120517 bytes; 8 filas ✔ (1ESOA - MATE1 28, 1BACA - LENG1 20,
+  1BACA - INGL1 23, 1BACA - TECN1 26, 2ESOB - HIST1 12, 2BACB - FISQ1 7, 4ESOX - MUSI1
+  19, 4ESOY - MUSI1 28), idénticas al fixture; pantalla sin cambios. Pendiente:
+  confirmación manual de menú/«Volver».
