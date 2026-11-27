@@ -62,7 +62,7 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 | T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | 27a5f55 · probada en vivo (L19) |
 | T10 | S7 | carga inicial ampliable guardada en el navegador (D13); Alumnado lee de ella; «Actualizar datos»; «Olvidar todo» (RP-08) | 6c2563c · probada en vivo (L19) |
 | T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS; «Olvidar todo» también accesible en «Preparar la extensión» con datos incompletos o de otra versión; no perder la carga buena anterior si falla una nueva | 43cb30a, d150fa5, aec80c8 · probada en vivo (L22) |
-| T11 | S8 | sugerencias de la revisión: marcos de Séneca, lista blanca al guardar, fallos de almacenamiento sin perder la carga buena (rama `carga-grupos-6-revision`) | pendiente |
+| T11 | S8 | sugerencias de la revisión: marcos de Séneca, lista blanca al guardar, fallos de almacenamiento sin perder la carga buena (rama `carga-grupos-6-revision`) | 563649b · falta prueba en vivo |
 
 ## Log
 
