@@ -37,7 +37,7 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 | T1 | S1 | esqueleto MV3 + panel | ae09a68 |
 | T2 | S4 | `tools/anonymize.js` + test (primera versión) | 95697ca |
 | T3 | S2, S3 | captura del propietario recibida | — (gitignored) |
-| T6 | S4 | anonimizador: codificación + NIE + lista blanca de tabla; fixture `tests/fixtures/`; `npm test` | pendiente |
+| T6 | S4 | anonimizador: codificación + NIE + lista blanca de tabla; fixture `tests/fixtures/`; `npm test` | d9d69e7, 13cc967, 6cdf17e, 23bc77b |
 | T7 | S5 | prueba en vivo: fetch en segundo plano (content script, mismo origen) sin efectos en la sesión | pendiente |
 | T4 | S2, S3 | adaptador «Materias que imparte» → lista de `{grupo, materia, alumnos}` con tests | pendiente |
 | T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | pendiente |
@@ -66,3 +66,9 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   tokens; «solo GET» no prueba la ausencia de efectos en una sesión con
   estado de navegación en el servidor. El propietario autorizó aplicar todo
   en orden: T6 → T7 → T4 → T5 → T9.
+- **L7** Reinicio del equipo durante R3-NUMERIC-TRAILING: el arreglo de la
+  expresión era correcto; el test fallaba porque contaba el `1252` de la
+  cabecera fija `charset="windows-1252"`. La aserción ahora mira solo la
+  tabla. RED con la expresión anterior, GREEN 21/21. T6 cerrada en 23bc77b.
+- **L8** Límite de corte: la rama suma ~1416 líneas en 6 commits desde
+  `main` (T1, T2, T6). Al publicar, proponer PR encadenados por tarea.
