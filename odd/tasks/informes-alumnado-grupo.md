@@ -135,3 +135,8 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   datos personales del alumnado, con «Olvidar todo» (RP-08) dentro de T10.
 - **L19** (verbatim) Prueba en vivo de 6e89112 (carga inicial, Alumnado, Actualizar
   datos, Olvidar todo, diagnóstico): «Perfecto, funciona perfectamente».
+- **L20** (verbatim) «Ahora mismo cuando cargo los datos me siguen saliendo los 2 aunque
+  se han cargado los grupos correctamente. Y el boton de borrar me sale aún
+  después de haber borrado los datos». Causa: `.secundario { display: block }`
+  anulaba el atributo `hidden`; la lógica de popup.js era correcta. Arreglo:
+  regla global `[hidden] { display: none !important }` con test.
