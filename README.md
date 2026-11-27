@@ -36,5 +36,31 @@ Consejería de Educación de la Junta de Andalucía.
 
 ## Cómo empezar (desarrollo)
 
+### Probar la extensión en tu navegador
+
+1. Abre `chrome://extensions` y activa **Modo de desarrollador** (arriba a la
+   derecha).
+2. Pulsa **Cargar descomprimida** y selecciona la carpeta
+   `E:\Dev\AsistenteDeSeneca\extension`.
+3. Abre Séneca con tu sesión iniciada y pulsa el icono de la extensión.
+4. Tras cada cambio del código, pulsa el botón de recargar (↻) que aparece
+   en la tarjeta de la extensión y vuelve a abrir el panel.
+
+### Pasar una pantalla de Séneca al proyecto (sin exponer datos)
+
+1. En la pantalla de Séneca que interesa, copia la URL del navegador
+   (quita cualquier `;jsessionid=...` o token de sesión) y pásala por chat.
+2. Guarda la página con **Ctrl+S → «Solo HTML»** dentro de la carpeta
+   `fixtures-entrada/` (no se sube nunca a git).
+3. Conviértela en fixture:
+   `node tools/anonymize.js fixtures-entrada/mi-captura.html tests/fixtures/mi-pantalla.html`
+   El script conserva **solo las tablas de datos** (descarta cabecera con tu
+   nombre y centro, menús, scripts y tokens), respeta los acentos
+   (Windows-1252) y sustituye DNIs, NIE, teléfonos, correos y fotos. Si
+   detecta algo dudoso, no escribe nada y lo explica.
+4. Revisa visualmente el resultado por si quedara algún nombre de persona:
+   los nombres no se pueden detectar de forma fiable.
+5. Ejecuta `npm test` para comprobar que todo sigue en verde.
+
 Pendiente de la Fase 0 del documento de requisitos: validación con docentes
 reales de las pantallas exactas de Séneca por perfil.

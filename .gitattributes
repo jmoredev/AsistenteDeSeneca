@@ -1,0 +1,2 @@
+# Fixtures are byte-exact Windows-1252 captures: never convert line endings.
+tests/fixtures/** -text

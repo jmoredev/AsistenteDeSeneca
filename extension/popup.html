@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Ayudante de Séneca</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>Ayudante de Séneca</h1>
+    <p id="estado" aria-live="polite"></p>
+  </header>
+
+  <p id="aviso" class="aviso" hidden></p>
+
+  <nav id="menu" hidden aria-label="Utilidades">
+    <section>
+      <h2>Informes</h2>
+      <h3>Alumnado</h3>
+      <button id="tarea-grupo" class="tarea" disabled>
+        Grupo de alumnos
+        <span class="nota">Pendiente: falta indicar la ruta exacta de Séneca
+        de esta pantalla.</span>
+      </button>
+    </section>
+  </nav>
+
+  <footer>
+    <p>Herramienta independiente, sin relación oficial con la Consejería de
+    Educación de la Junta de Andalucía. Nada sale de tu navegador.</p>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
