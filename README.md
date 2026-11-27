@@ -38,13 +38,27 @@ Consejería de Educación de la Junta de Andalucía.
 
 ### Probar la extensión en tu navegador
 
-1. Abre `chrome://extensions` y activa **Modo de desarrollador** (arriba a la
-   derecha).
+1. Abre la página de extensiones: `brave://extensions` en Brave,
+   `chrome://extensions` en Chrome o `edge://extensions` en Edge. Activa
+   **Modo de desarrollador** (interruptor arriba a la derecha). No hace falta
+   empaquetar nada: se carga la carpeta tal cual.
 2. Pulsa **Cargar descomprimida** y selecciona la carpeta
    `E:\Dev\AsistenteDeSeneca\extension`.
-3. Abre Séneca con tu sesión iniciada y pulsa el icono de la extensión.
-4. Tras cada cambio del código, pulsa el botón de recargar (↻) que aparece
+3. Fija el icono: pulsa el icono de la pieza de puzle de la barra y la
+   chincheta junto a «Ayudante de Séneca».
+4. Abre Séneca con tu sesión iniciada y pulsa el icono de la extensión.
+5. Tras cada cambio del código, pulsa el botón de recargar (↻) que aparece
    en la tarjeta de la extensión y vuelve a abrir el panel.
+
+### Diagnóstico de conexión (prueba en vivo)
+
+El panel incluye **Probar conexión con «Grupos de alumnos/as»**. Busca ese
+enlace del menú por su texto, pide la pantalla en segundo plano desde la
+propia página de Séneca (mismo origen, con tu sesión) y muestra en el panel
+los pasos, los errores, los grupos y materias extraídos y si tu pantalla
+cambió. El informe solo se ve en tu navegador: no se envía a ningún sitio y
+las direcciones aparecen con los tokens tapados (`nav/<token>`). Si quieres
+compartir el resultado, revísalo antes y copia solo lo necesario.
 
 ### Pasar una pantalla de Séneca al proyecto (sin exponer datos)
 
