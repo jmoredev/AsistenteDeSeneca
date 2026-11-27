@@ -326,7 +326,8 @@ test("si falla «Actualizar datos», se conservan los datos buenos anteriores y 
   assert.equal(
     resultado.aviso,
     "No se pudo cargar Grupos de alumnos/as (No encuentro el menú «Grupos de alumnos/as»). " +
-      "Se mantienen los datos cargados el 27/11/2025 09:05."
+      "Se mantienen los datos cargados el 27/11/2025 09:05. " +
+      "Pulsa «Actualizar datos» para volver a intentarlo."
   );
 });
 
@@ -347,8 +348,9 @@ test("una carga nueva que no llega a ejecutarse tampoco borra los datos buenos a
   assert.equal(resultado.conservada, true);
   assert.equal(
     resultado.aviso,
-    "No se ha podido completar la carga de datos. Vuelve a intentarlo. " +
-      "Se mantienen los datos cargados el 27/11/2025 09:05."
+    "No se ha podido completar la carga de datos. " +
+      "Se mantienen los datos cargados el 27/11/2025 09:05. " +
+      "Pulsa «Actualizar datos» para volver a intentarlo."
   );
 
   // También cuando lo guardado era un intento incompleto: no se inventa nada,

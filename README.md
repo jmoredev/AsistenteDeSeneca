@@ -95,7 +95,7 @@ menú normal como en **Preparar la extensión** en cuanto hay algo guardado
 Si una carga nueva falla (por ejemplo, al pulsar **Actualizar datos**), los
 datos buenos de la carga anterior **no se pierden**: se siguen usando en el
 menú y en Alumnado, y el panel dice qué elemento falló y de cuándo son los
-datos que se mantienen, con un botón **Reintentar**.
+datos que se mantienen; para volver a intentarlo, pulsa **Actualizar datos**.
 
 La lista de datos de la carga inicial está preparada para crecer: hoy solo
 tiene «Grupos de alumnos/as» y añadir otro elemento es una entrada más en

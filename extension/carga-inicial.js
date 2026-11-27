@@ -201,7 +201,8 @@
     const cuando = anterior ? formatearFecha(anterior.cargadoEl) : "";
     const mantiene =
       cuando === "" ? "Se mantienen los datos de la última carga." : `Se mantienen los datos cargados el ${cuando}.`;
-    return `${fallos || MENSAJE_SIN_CARGA} ${mantiene}`;
+    const motivo = fallos || "No se ha podido completar la carga de datos.";
+    return `${motivo} ${mantiene} Pulsa «Actualizar datos» para volver a intentarlo.`;
   }
 
   // Aplica la carga nueva sobre la guardada con el almacén inyectado.

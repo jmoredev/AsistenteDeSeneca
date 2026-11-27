@@ -140,3 +140,7 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   después de haber borrado los datos». Causa: `.secundario { display: block }`
   anulaba el atributo `hidden`; la lógica de popup.js era correcta. Arreglo:
   regla global `[hidden] { display: none !important }` con test.
+- **L21** Decisión del propietario: tras una actualización fallida con datos
+  conservados, solo «Actualizar datos» (se quita el «Reintentar» duplicado; el
+  aviso remite a «Actualizar datos»). La primera carga fallida mantiene
+  «Reintentar» en el propio botón «Cargar datos».

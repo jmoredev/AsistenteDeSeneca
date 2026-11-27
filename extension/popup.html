@@ -16,13 +16,8 @@
   <!-- Progreso de la carga inicial y avisos de lo que falló (S7, RU-04). -->
   <div id="carga-progreso" class="progreso" aria-live="polite" hidden></div>
   <p id="carga-fallos" class="error" role="alert" hidden></p>
-  <!-- Si falla una carga nueva se mantienen los datos anteriores: se ofrece
-       reintentar aquí, porque «Cargar datos» vive en «Preparar la extensión»
-       y con datos buenos conservados esa sección está oculta (T9). -->
-  <button id="reintentar-carga" class="secundario" type="button" hidden>
-    <span id="reintentar-etiqueta">Reintentar</span>
-    <span class="nota">Vuelve a leer de Séneca los datos que fallaron.</span>
-  </button>
+  <!-- Si falla una carga nueva se mantienen los datos anteriores y el aviso
+       remite a «Actualizar datos» del menú (sin botón duplicado, L21). -->
   <p id="carga-mensaje" class="aviso" aria-live="polite" hidden></p>
 
   <section id="primer-uso" aria-labelledby="primer-uso-titulo" hidden>

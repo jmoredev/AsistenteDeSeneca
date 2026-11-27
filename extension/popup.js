@@ -87,8 +87,6 @@ function conectarCarga(tab) {
     olvidar: document.getElementById("olvidar-todo"),
     olvidarEtiqueta: document.getElementById("olvidar-todo-etiqueta"),
     olvidarPrimerUso: document.getElementById("olvidar-todo-primer-uso"),
-    reintentar: document.getElementById("reintentar-carga"),
-    reintentarEtiqueta: document.getElementById("reintentar-etiqueta"),
     alumnado: document.getElementById("alumnado"),
     avisos: document.getElementById("alumnado-avisos"),
     error: document.getElementById("alumnado-error"),
@@ -109,7 +107,6 @@ function conectarCarga(tab) {
   dom.cargar.textContent = CargaInicial.TEXTO_CARGAR;
   dom.actualizarEtiqueta.textContent = CargaInicial.TEXTO_ACTUALIZAR;
   dom.olvidarEtiqueta.textContent = CargaInicial.TEXTO_OLVIDAR;
-  dom.reintentarEtiqueta.textContent = CargaInicial.TEXTO_REINTENTAR;
 
   // --- Carga inicial ---
 
@@ -154,7 +151,6 @@ function conectarCarga(tab) {
     dom.cargar.textContent = fallos.length === 0 ? CargaInicial.TEXTO_CARGAR : CargaInicial.TEXTO_REINTENTAR;
     // Con los datos anteriores conservados el menú sigue visible: se ofrece
     // «Reintentar» aquí, porque «Cargar datos» está en «Preparar la extensión».
-    dom.reintentar.hidden = !conservada;
 
     pintarProgreso();
   }
@@ -249,7 +245,6 @@ function conectarCarga(tab) {
     dom.actualizar.disabled = si;
     dom.olvidar.disabled = si;
     dom.olvidarPrimerUso.disabled = si;
-    dom.reintentar.disabled = si;
     dom.alumnado.disabled = si;
   }
 
@@ -328,7 +323,6 @@ function conectarCarga(tab) {
 
   dom.cargar.addEventListener("click", cargarDatos);
   dom.actualizar.addEventListener("click", cargarDatos);
-  dom.reintentar.addEventListener("click", cargarDatos);
   dom.olvidar.addEventListener("click", olvidarTodo);
   dom.olvidarPrimerUso.addEventListener("click", olvidarTodo);
   dom.alumnado.addEventListener("click", abrirAlumnado);
