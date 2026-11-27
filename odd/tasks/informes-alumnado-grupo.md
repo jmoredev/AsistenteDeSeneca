@@ -49,12 +49,12 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 | T1 | S1 | esqueleto MV3 + panel | ae09a68 |
 | T2 | S4 | `tools/anonymize.js` + test (primera versión) | 95697ca |
 | T3 | S2, S3 | captura del propietario recibida | — (gitignored) |
-| T6 | S4 | anonimizador: codificación + NIE + lista blanca de tabla; fixture `tests/fixtures/`; `npm test` | d9d69e7, 13cc967, 6cdf17e, 23bc77b |
-| T7 | S5, S6 | prueba en vivo: botón de diagnóstico en el panel (`chrome.scripting`, mismo origen) que muestra localmente pasos, errores y extracción | 62f7502, 06c9903, 3a32d82, e712d1b · cerrada (L14, L15) |
-| T4 | S2, S3 | 8b5ef9a · adaptador «Grupos de alumnos/as» → lista de `{grupo, materia, alumnos}` con tests | pendiente |
-| T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | 0080d12 · probada en vivo (L19) |
-| T10 | S7 | carga inicial ampliable guardada en el navegador (D13); Alumnado lee de ella; «Actualizar datos»; «Olvidar todo» (RP-08) | 6e89112 · probada en vivo (L19) |
-| T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS; «Olvidar todo» también accesible en «Preparar la extensión» con datos incompletos o de otra versión; no perder la carga buena anterior si falla una nueva | pendiente |
+| T6 | S4 | anonimizador: codificación + NIE + lista blanca de tabla; fixture `tests/fixtures/`; `npm test` | d0f5c06, fc5130c, 04181be, e378ed9 |
+| T7 | S5, S6 | prueba en vivo: botón de diagnóstico en el panel (`chrome.scripting`, mismo origen) que muestra localmente pasos, errores y extracción | 5a951fd, 849c6b5, 7495516, 0fe2314 · cerrada (L14, L15) |
+| T4 | S2, S3 | 09ddbc8 · adaptador «Grupos de alumnos/as» → lista de `{grupo, materia, alumnos}` con tests | pendiente |
+| T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | 27a5f55 · probada en vivo (L19) |
+| T10 | S7 | carga inicial ampliable guardada en el navegador (D13); Alumnado lee de ella; «Actualizar datos»; «Olvidar todo» (RP-08) | 6c2563c · probada en vivo (L19) |
+| T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS; «Olvidar todo» también accesible en «Preparar la extensión» con datos incompletos o de otra versión; no perder la carga buena anterior si falla una nueva | 43cb30a, d150fa5, aec80c8 · probada en vivo (L22) |
 
 ## Log
 
@@ -82,7 +82,7 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 - **L7** Reinicio del equipo durante R3-NUMERIC-TRAILING: el arreglo de la
   expresión era correcto; el test fallaba porque contaba el `1252` de la
   cabecera fija `charset="windows-1252"`. La aserción ahora mira solo la
-  tabla. RED con la expresión anterior, GREEN 21/21. T6 cerrada en 23bc77b.
+  tabla. RED con la expresión anterior, GREEN 21/21. T6 cerrada en e378ed9.
 - **L8** Límite de corte: la rama suma ~1416 líneas en 6 commits desde
   `main` (T1, T2, T6). Al publicar, proponer PR encadenados por tarea.
 - **L9** (verbatim): «La prueba en vivo debe de mostrarme a mi localmente los
@@ -96,8 +96,8 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   en Windows-1252 aunque la meta diga UTF-8. Se desconoce si `menus/<token>`
   devuelve los datos o un paso intermedio: el diagnóstico sigue como mucho un
   salto inequívoco y lo informa.
-- **L11** Diagnóstico en 62f7502. Revisión nativa `review-3639227bda884fa0`
-  (alto): R3-001 (`<br>` pegaba elementos) corregido en 06c9903; el validador
+- **L11** Diagnóstico en 5a951fd. Revisión nativa `review-3639227bda884fa0`
+  (alto): R3-001 (`<br>` pegaba elementos) corregido en 849c6b5; el validador
   dirigido lo rechazó sin motivo visible → estado `escalated`, parada
   terminal `native_stop_required` (decisión del propietario antes de publicar).
   Endurecimiento posterior por S6 (R1-1, R3-002..005, R4-001, R1-2): solo
@@ -115,7 +115,7 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   principal sin moverse, así que la comprobación manual de «Volver»/menú
   sigue pendiente. El fixture `materias-que-imparte.html` tiene nombre
   equivocado: renombrar en T4.
-- **L14** Segunda prueba en vivo (e712d1b, Brave, desde la página principal):
+- **L14** Segunda prueba en vivo (0fe2314, Brave, desde la página principal):
   enlace «Grupos de alumnos/as» en marco 0; un solo GET, HTTP 200,
   ISO-8859-1, 120517 bytes; 8 filas ✔ (1ESOA - MATE1 28, 1BACA - LENG1 20,
   1BACA - INGL1 23, 1BACA - TECN1 26, 2ESOB - HIST1 12, 2BACB - FISQ1 7, 4ESOX - MUSI1
@@ -126,12 +126,29 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   vuelve a la pantalla principal pero si navego dos inveles me devuelve al
   nivel anterior». Sin entrada fantasma en la pila del servidor: S5 cumplida.
 - **L16** (verbatim): «La primera vez que se use la extensión hay que hacer una carga inicial de datos para poder operar con ella, uno de esos datos es cargar los grupos de alumnos para despuñes poder elegir que queremos hacer con cada uno de ellos. Si posteriormente hay más elementos que son necesarios en la carga inicial te lo indicaré»
-- **L17** T5 en 0080d12. El trabajador detectó que 8b5ef9a (T4) había borrado
-  `destinoDe` y roto el diagnóstico en vivo; arreglado en 0080d12 (salida del
+- **L17** T5 en 27a5f55. El trabajador detectó que 09ddbc8 (T4) había borrado
+  `destinoDe` y roto el diagnóstico en vivo; arreglado en 27a5f55 (salida del
   diagnóstico idéntica en 6 escenarios simulados). Lección: tras tocar el
   diagnóstico, volver a probarlo en vivo.
 - **L18** Conflicto S7 vs RP-04 [M] (sin persistencia). Decisión del propietario:
   excepción acotada (D13 en REQUISITOS): guardar solo la carga inicial sin
   datos personales del alumnado, con «Olvidar todo» (RP-08) dentro de T10.
-- **L19** (verbatim) Prueba en vivo de 6e89112 (carga inicial, Alumnado, Actualizar
+- **L19** (verbatim) Prueba en vivo de 6c2563c (carga inicial, Alumnado, Actualizar
   datos, Olvidar todo, diagnóstico): «Perfecto, funciona perfectamente».
+- **L20** (verbatim) «Ahora mismo cuando cargo los datos me siguen saliendo los 2 aunque
+  se han cargado los grupos correctamente. Y el boton de borrar me sale aún
+  después de haber borrado los datos». Causa: `.secundario { display: block }`
+  anulaba el atributo `hidden`; la lógica de popup.js era correcta. Arreglo:
+  regla global `[hidden] { display: none !important }` con test.
+- **L21** Decisión del propietario: tras una actualización fallida con datos
+  conservados, solo «Actualizar datos» (se quita el «Reintentar» duplicado; el
+  aviso remite a «Actualizar datos»). La primera carga fallida mantiene
+  «Reintentar» en el propio botón «Cargar datos».
+- **L22** (verbatim) Repaso en vivo de 43cb30a + d150fa5 + aec80c8: «Ahora
+  funciona perfectamente».
+- **L23** (verbatim) «No debe de aparecer nada de información sensible en toda la
+  extensión que se publique, Ni tokens de sesion ni información extraida». Antes
+  de publicar se reescribió el historial de la rama: grupos, materias, ciclos y
+  fecha reales sustituidos por valores inventados en todos los commits, y el
+  fragmento de token de prueba por uno ficticio. Hashes de este documento
+  actualizados. Respaldo solo local, nunca publicado.

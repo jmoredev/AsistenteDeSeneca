@@ -15,6 +15,12 @@
   outline-offset: 2px;
 }
 
+/* Class rules below set `display`; without this, elements with the
+   `hidden` attribute (e.g. «Reintentar», «Olvidar todo») would stay visible. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   font-family: system-ui, "Segoe UI", Arial, sans-serif;
   background: var(--fondo);

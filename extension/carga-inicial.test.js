@@ -257,6 +257,160 @@ test("los elementos que fallan se nombran para poder reintentar (S7, RU-04)", ()
   assert.equal(Carga.textoFallos([]), "");
 });
 
+// --- T9: datos incompletos o de otra versión y cargas que fallan ---
+
+function cargaCompleta(cargadoEl) {
+  return {
+    version: Carga.VERSION,
+    cargadoEl,
+    elementos: {
+      grupos: {
+        ok: true,
+        datos: { grupos: [{ grupo: "1BACA", materia: "TECN1", alumnos: 26, etiqueta: "1BACA - TECN1" }] },
+        avisos: [],
+        error: "",
+      },
+    },
+  };
+}
+
+function cargaFallida(mensaje) {
+  return {
+    version: Carga.VERSION,
+    cargadoEl: "2025-11-27T10:30:00.000Z",
+    elementos: {
+      grupos: { ok: false, datos: {}, avisos: [], error: mensaje },
+    },
+  };
+}
+
+test("«Olvidar todo» se ofrece siempre que haya algo guardado, aunque esté incompleto o sea de otra versión (RP-08, T9)", () => {
+  assert.equal(Carga.hayDatosQueOlvidar(null), false);
+  assert.equal(Carga.hayDatosQueOlvidar(undefined), false);
+
+  assert.equal(Carga.hayDatosQueOlvidar(cargaCompleta(RELOJ().toISOString())), true);
+  assert.equal(Carga.hayDatosQueOlvidar(cargaFallida("No encuentro el menú.")), true);
+  assert.equal(Carga.hayDatosQueOlvidar({ version: Carga.VERSION, cargadoEl: "", elementos: {} }), true);
+  // Una carga de una versión anterior del formato también se puede olvidar.
+  assert.equal(Carga.hayDatosQueOlvidar({ ...cargaCompleta(RELOJ().toISOString()), version: Carga.VERSION - 1 }), true);
+});
+
+test("si falla «Actualizar datos», se conservan los datos buenos anteriores y se dice qué falló y de cuándo son (T9)", async () => {
+  const anterior = cargaCompleta(RELOJ().toISOString());
+  const nueva = cargaFallida("No encuentro el menú «Grupos de alumnos/as».");
+
+  // Almacén inyectado: reproduce chrome.storage.local sin tocar el navegador.
+  let guardado = anterior;
+  let escrituras = 0;
+
+  const resultado = await Carga.aplicarCarga({
+    anterior,
+    nueva,
+    guardar: async (carga) => {
+      escrituras += 1;
+      guardado = carga;
+    },
+  });
+
+  // Lo guardado no se toca y se sigue pudiendo usar (menú y Alumnado).
+  assert.equal(escrituras, 0);
+  assert.equal(guardado, anterior);
+  assert.equal(resultado.carga, anterior);
+  assert.equal(Carga.estaCompleta(resultado.carga), true);
+  assert.deepEqual(resultado.carga.elementos.grupos.datos.grupos, [
+    { grupo: "1BACA", materia: "TECN1", alumnos: 26, etiqueta: "1BACA - TECN1" },
+  ]);
+
+  // Se explica qué falló y cuándo se cargaron los datos que se mantienen.
+  assert.equal(resultado.conservada, true);
+  assert.equal(
+    resultado.aviso,
+    "No se pudo cargar Grupos de alumnos/as (No encuentro el menú «Grupos de alumnos/as»). " +
+      "Se mantienen los datos cargados el 27/11/2025 09:05. " +
+      "Pulsa «Actualizar datos» para volver a intentarlo."
+  );
+});
+
+test("una carga nueva que no llega a ejecutarse tampoco borra los datos buenos anteriores (T9)", async () => {
+  const anterior = cargaCompleta(RELOJ().toISOString());
+  let guardado = anterior;
+
+  const resultado = await Carga.aplicarCarga({
+    anterior,
+    nueva: null,
+    guardar: async (carga) => {
+      guardado = carga;
+    },
+  });
+
+  assert.equal(guardado, anterior);
+  assert.equal(resultado.carga, anterior);
+  assert.equal(resultado.conservada, true);
+  assert.equal(
+    resultado.aviso,
+    "No se ha podido completar la carga de datos. " +
+      "Se mantienen los datos cargados el 27/11/2025 09:05. " +
+      "Pulsa «Actualizar datos» para volver a intentarlo."
+  );
+
+  // También cuando lo guardado era un intento incompleto: no se inventa nada,
+  // pero se sigue sabiendo que hay datos que se pueden olvidar (RP-08, T9).
+  const incompleta = cargaFallida("No encuentro el menú.");
+  const segunda = await Carga.aplicarCarga({
+    anterior: incompleta,
+    nueva: null,
+    guardar: async () => {
+      assert.fail("no debe guardarse nada cuando la carga no llegó a ejecutarse");
+    },
+  });
+  assert.equal(segunda.carga, incompleta);
+  assert.equal(segunda.conservada, false);
+  assert.equal(segunda.aviso, "");
+  assert.equal(Carga.hayDatosQueOlvidar(segunda.carga), true);
+});
+
+test("si es la primera carga y falla, el fallo se guarda como hasta ahora para poder reintentar (T9)", async () => {
+  const nueva = cargaFallida("Séneca respondió con un error (HTTP 500).");
+
+  let guardado = null;
+  const resultado = await Carga.aplicarCarga({
+    anterior: null,
+    nueva,
+    guardar: async (carga) => {
+      guardado = carga;
+    },
+  });
+
+  assert.equal(guardado, nueva);
+  assert.equal(resultado.carga, nueva);
+  assert.equal(resultado.conservada, false);
+  assert.equal(resultado.aviso, "");
+  assert.deepEqual(Carga.fallosDeCarga(resultado.carga), [
+    { id: "grupos", nombre: "Grupos de alumnos/as", error: "Séneca respondió con un error (HTTP 500)." },
+  ]);
+  assert.equal(Carga.estaCompleta(resultado.carga), false);
+});
+
+test("una carga nueva completa sustituye a la anterior, buena o incompleta (T9)", async () => {
+  for (const anterior of [null, cargaFallida("No encuentro el menú."), cargaCompleta("2025-10-01T08:00:00.000Z")]) {
+    const nueva = cargaCompleta("2025-11-27T10:30:00.000Z");
+    let guardado = anterior;
+
+    const resultado = await Carga.aplicarCarga({
+      anterior,
+      nueva,
+      guardar: async (carga) => {
+        guardado = carga;
+      },
+    });
+
+    assert.equal(guardado, nueva);
+    assert.equal(resultado.carga, nueva);
+    assert.equal(resultado.conservada, false);
+    assert.equal(resultado.aviso, "");
+  }
+});
+
 test("«Olvidar todo» borra el almacén, vacía la memoria y lo confirma (RP-08, S7)", async () => {
   let borrados = 0;
 

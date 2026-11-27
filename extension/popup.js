@@ -5,7 +5,9 @@
 // carga lee Séneca en segundo plano (seneca/peticion.js) y su resultado se
 // guarda solo en `chrome.storage.local`, nunca se sincroniza ni se envía.
 
-const SENECA_URL_RE = /^https:\/\/[^/]*\.juntadeandalucia\.es\//i;
+// La detección del host y la lectura de la pestaña viven en sitio-seneca.js:
+// solo `seneca.juntadeandalucia.es`, y sin errores sin capturar si la consulta
+// de pestañas falla (T9).
 
 // Almacenamiento local de la propia extensión (RP-04, D13): solo la clave de
 // la carga inicial, borrable con «Olvidar todo» (RP-08).
@@ -26,18 +28,26 @@ async function main() {
   const estado = document.getElementById("estado");
   const aviso = document.getElementById("aviso");
 
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const url = tab && tab.url ? tab.url : "";
-
-  if (!SENECA_URL_RE.test(url)) {
-    estado.textContent = "La extensión solo funciona dentro de Séneca.";
-    aviso.textContent =
-      "Abre Séneca (seneca.juntadeandalucia.es) con tu sesión iniciada " +
-      "y pulsa de nuevo este botón.";
+  // `chrome.tabs.query` puede fallar o no traer pestaña o dirección: se
+  // explica en español en vez de dejar un error sin capturar (T9, RF-24).
+  const leida = await SitioSeneca.leerPestanaActiva(() =>
+    chrome.tabs.query({ active: true, currentWindow: true })
+  );
+  if (!leida.ok) {
+    estado.textContent = leida.mensaje;
+    aviso.textContent = leida.ayuda;
     aviso.hidden = false;
     return;
   }
 
+  if (!SitioSeneca.esUrlSeneca(leida.url)) {
+    estado.textContent = SitioSeneca.MENSAJE_NO_SENECA;
+    aviso.textContent = SitioSeneca.AYUDA_NO_SENECA;
+    aviso.hidden = false;
+    return;
+  }
+
+  const tab = leida.pestana;
   estado.textContent = "Séneca detectado: la extensión está activa.";
   // El diagnóstico se conecta antes de leer el almacén y no depende de la
   // carga inicial: su salida es la misma que antes (T7, T10).
@@ -76,6 +86,7 @@ function conectarCarga(tab) {
     actualizarEtiqueta: document.getElementById("actualizar-datos-etiqueta"),
     olvidar: document.getElementById("olvidar-todo"),
     olvidarEtiqueta: document.getElementById("olvidar-todo-etiqueta"),
+    olvidarPrimerUso: document.getElementById("olvidar-todo-primer-uso"),
     alumnado: document.getElementById("alumnado"),
     avisos: document.getElementById("alumnado-avisos"),
     error: document.getElementById("alumnado-error"),
@@ -90,6 +101,8 @@ function conectarCarga(tab) {
   let elegido = ""; // selección en memoria, sin almacenamiento
   let ocupado = false; // hay una carga en marcha
   let errorGuardado = ""; // aviso si el navegador no dejó guardar
+  let conservada = false; // la última carga falló y se mantienen los datos anteriores
+  let avisoConservada = ""; // qué falló y de cuándo son los datos que se mantienen
 
   dom.cargar.textContent = CargaInicial.TEXTO_CARGAR;
   dom.actualizarEtiqueta.textContent = CargaInicial.TEXTO_ACTUALIZAR;
@@ -121,6 +134,10 @@ function conectarCarga(tab) {
     const completa = CargaInicial.estaCompleta(carga);
     dom.primerUso.hidden = completa;
     dom.menu.hidden = !completa;
+    // «Olvidar todo» (RP-08) se ofrece también en «Preparar la extensión» en
+    // cuanto haya algo guardado, aunque la carga esté incompleta o sea de otra
+    // versión del formato (T9).
+    dom.olvidarPrimerUso.hidden = !CargaInicial.hayDatosQueOlvidar(carga);
 
     if (completa) {
       dom.fecha.textContent = CargaInicial.textoCargadoEl(carga.cargadoEl);
@@ -128,10 +145,12 @@ function conectarCarga(tab) {
 
     // Qué falló (o si el navegador no dejó guardar), para poder reintentar.
     const fallos = CargaInicial.fallosDeCarga(carga);
-    const partes = [CargaInicial.textoFallos(fallos), errorGuardado].filter(Boolean);
+    const partes = [CargaInicial.textoFallos(fallos), errorGuardado, avisoConservada].filter(Boolean);
     dom.fallos.textContent = partes.join(" ");
     dom.fallos.hidden = partes.length === 0;
     dom.cargar.textContent = fallos.length === 0 ? CargaInicial.TEXTO_CARGAR : CargaInicial.TEXTO_REINTENTAR;
+    // Con los datos anteriores conservados el menú sigue visible: se ofrece
+    // «Reintentar» aquí, porque «Cargar datos» está en «Preparar la extensión».
 
     pintarProgreso();
   }
@@ -141,6 +160,8 @@ function conectarCarga(tab) {
     ocupado = true;
     bloquear(true);
     errorGuardado = "";
+    conservada = false;
+    avisoConservada = "";
     dom.mensaje.hidden = true;
     dom.mensaje.textContent = "";
     reiniciarAlumnado();
@@ -149,6 +170,7 @@ function conectarCarga(tab) {
     pintarProgreso();
 
     let nueva = null;
+    let sinCarga = false;
     try {
       nueva = await CargaInicial.ejecutarCarga({
         pedir: pedirPantalla,
@@ -159,20 +181,26 @@ function conectarCarga(tab) {
         },
       });
     } catch (e) {
-      errorGuardado = CargaInicial.MENSAJE_SIN_CARGA;
+      nueva = null;
+      sinCarga = true;
     }
 
-    if (nueva) {
-      try {
-        await Almacen.guardar(nueva);
-        carga = nueva;
-      } catch (e) {
-        carga = null;
-        errorGuardado = CargaInicial.MENSAJE_SIN_GUARDAR;
-      }
-    } else {
-      carga = null;
+    // Una carga nueva que falla no borra la anterior si era buena (T9): se
+    // conserva lo guardado y se explica qué falló y de cuándo son los datos.
+    let decision;
+    try {
+      decision = await CargaInicial.aplicarCarga({ anterior: carga, nueva, guardar: Almacen.guardar });
+    } catch (e) {
+      decision = { carga: null, conservada: false, aviso: "" };
+      errorGuardado = CargaInicial.MENSAJE_SIN_GUARDAR;
     }
+
+    carga = decision.carga;
+    conservada = decision.conservada;
+    avisoConservada = decision.aviso;
+    // Si la carga ni siquiera pudo empezar y no hay datos que conservar, el
+    // panel lo dice como siempre.
+    if (sinCarga && !conservada) errorGuardado = CargaInicial.MENSAJE_SIN_CARGA;
 
     // Con la carga completa el progreso deja paso al menú.
     if (CargaInicial.estaCompleta(carga)) progreso = [];
@@ -196,6 +224,8 @@ function conectarCarga(tab) {
       vista = null;
       progreso = [];
       errorGuardado = "";
+      conservada = false;
+      avisoConservada = "";
       dom.mensaje.textContent = resultado.mensaje;
       dom.mensaje.hidden = false;
       reiniciarAlumnado();
@@ -214,6 +244,7 @@ function conectarCarga(tab) {
     dom.cargar.disabled = si;
     dom.actualizar.disabled = si;
     dom.olvidar.disabled = si;
+    dom.olvidarPrimerUso.disabled = si;
     dom.alumnado.disabled = si;
   }
 
@@ -293,6 +324,7 @@ function conectarCarga(tab) {
   dom.cargar.addEventListener("click", cargarDatos);
   dom.actualizar.addEventListener("click", cargarDatos);
   dom.olvidar.addEventListener("click", olvidarTodo);
+  dom.olvidarPrimerUso.addEventListener("click", olvidarTodo);
   dom.alumnado.addEventListener("click", abrirAlumnado);
 
   return {
