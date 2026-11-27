@@ -46,6 +46,16 @@ Consejería de Educación de la Junta de Andalucía.
 4. Tras cada cambio del código, pulsa el botón de recargar (↻) que aparece
    en la tarjeta de la extensión y vuelve a abrir el panel.
 
+### Diagnóstico de conexión (prueba en vivo)
+
+El panel incluye **Probar conexión con «Materias que imparte»**. Busca ese
+enlace del menú por su texto, pide la pantalla en segundo plano desde la
+propia página de Séneca (mismo origen, con tu sesión) y muestra en el panel
+los pasos, los errores, los grupos y materias extraídos y si tu pantalla
+cambió. El informe solo se ve en tu navegador: no se envía a ningún sitio y
+las direcciones aparecen con los tokens tapados (`nav/<token>`). Si quieres
+compartir el resultado, revísalo antes y copia solo lo necesario.
+
 ### Pasar una pantalla de Séneca al proyecto (sin exponer datos)
 
 1. En la pantalla de Séneca que interesa, copia la URL del navegador

@@ -23,6 +23,15 @@
         de esta pantalla.</span>
       </button>
     </section>
+    <section>
+      <h2>Diagnóstico</h2>
+      <button id="diagnostico" class="tarea">
+        Probar conexión con «Materias que imparte»
+        <span class="nota">El resultado solo se muestra aquí; no se envía a
+        ningún sitio.</span>
+      </button>
+      <pre id="diagnostico-salida" class="diagnostico" aria-live="polite" hidden></pre>
+    </section>
   </nav>
 
   <footer>
@@ -30,6 +39,8 @@
     Educación de la Junta de Andalucía. Nada sale de tu navegador.</p>
   </footer>
 
+  <script src="diagnostico-analisis.js"></script>
+  <script src="diagnostico.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -29,6 +29,12 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 - **S5** La petición en segundo plano no puede alterar la vista ni la sesión
   del docente (RF-15, D9). Debe comprobarse en vivo que el estado de
   navegación del servidor no cambia y que la cookie de sesión se envía.
+- **S6** (verbatim del propietario, L9): «La prueba en vivo debe de mostrarme
+  a mi localmente los errores y lo que se extrae para luego yo indicartelo
+  pero no te debe de mandar nada de Séneca direcamente a ti, la información
+  no puede salir de Internet.» El informe se pinta solo en el panel; ninguna
+  petición sale a otro origen que Séneca; las URL se muestran con los tokens
+  tapados.
 
 ## Tasks
 
@@ -38,7 +44,7 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 | T2 | S4 | `tools/anonymize.js` + test (primera versión) | 95697ca |
 | T3 | S2, S3 | captura del propietario recibida | — (gitignored) |
 | T6 | S4 | anonimizador: codificación + NIE + lista blanca de tabla; fixture `tests/fixtures/`; `npm test` | d9d69e7, 13cc967, 6cdf17e, 23bc77b |
-| T7 | S5 | prueba en vivo: fetch en segundo plano (content script, mismo origen) sin efectos en la sesión | pendiente |
+| T7 | S5, S6 | prueba en vivo: botón de diagnóstico en el panel (`chrome.scripting`, mismo origen) que muestra localmente pasos, errores y extracción | en curso |
 | T4 | S2, S3 | adaptador «Materias que imparte» → lista de `{grupo, materia, alumnos}` con tests | pendiente |
 | T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | pendiente |
 | T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS | pendiente |
@@ -72,3 +78,14 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   tabla. RED con la expresión anterior, GREEN 21/21. T6 cerrada en 23bc77b.
 - **L8** Límite de corte: la rama suma ~1416 líneas en 6 commits desde
   `main` (T1, T2, T6). Al publicar, proponer PR encadenados por tarea.
+- **L9** (verbatim): «La prueba en vivo debe de mostrarme a mi localmente los
+  errores y lo que se extrae para luego yo indicartelo pero no te debe de
+  mandar nada de Séneca direcamente a ti, la información no puede salir de
+  Internet.»
+- **L10** Mapa de la captura: el enlace del menú es `<a data-menulink="../menus/<token>"
+  href="#" onclick="Navegacion.llamadaMenu(this)">Materias que imparte</a>`; la
+  página registra su entrada de navegación con JS (`Navegacion.addEntradaNavegacion`)
+  y «Volver» pide `PaginaVuelta.jsp`: hay pila de navegación en el servidor. Bytes
+  en Windows-1252 aunque la meta diga UTF-8. Se desconoce si `menus/<token>`
+  devuelve los datos o un paso intermedio: el diagnóstico sigue como mucho un
+  salto inequívoco y lo informa.
