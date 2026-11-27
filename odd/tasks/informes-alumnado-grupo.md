@@ -42,6 +42,13 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   fecha de la última carga y un botón para volver a cargar; Alumnado lee los
   grupos guardados sin pedir a Séneca cada vez.
 
+- **S8** Sugerencias de la revisión independiente `review-7a9a42d4e5cee4b5`
+  (texto literal de los revisores), a resolver por petición del propietario (L24):
+  - **S8.1** (R1-marco-cualquiera) «El enlace del menú se localiza en todos los marcos de la pestaña (allFrames) y el GET en segundo plano se ejecuta en el marco que contiene ese enlace: un marco de otro origen embebido en la pestaña de Séneca podría presentar un ancla con el texto visible exacto y dirigir la petición credenciada a una URL arbitraria dentro del propio origen de Séneca. […] se sugiere restringir la búsqueda del enlace y la ejecución de sondear a marcos cuyo documento pertenezca al origen de Séneca (o al marco principal).»
+  - **S8.2** (R1-whitelist-persistencia) «datosDeExtraccion persiste en chrome.storage.local todo lo que devuelve un adaptador salvo sus claves avisos y error, filtrando solo por tipo de dato (soloPrimitivas) y no por una lista blanca de campos […] se sugiere que cada elemento del registro declare sus campos permitidos y que datosDeExtraccion copie solo esos.»
+  - **S8.3** (R3-001, R4-002) «When a new load completes but chrome.storage.local.set rejects, cargarDatos catches the rejection and sets decision.carga to null instead of preserving the previous complete carga passed as anterior. The panel then hides the menu and Alumnado and shows the extension as unprepared even though the previous good data is still available, so a storage write failure loses the usable in-memory state until the popup is reopened.»
+  - **S8.4** (R4-001) «A transient failure reading the stored initial load is silently treated as 'no stored data' by setting `carga = null`; if the teacher then presses «Cargar datos» and that load fails, `aplicarCarga` is called with `anterior: null` and saves the failed record over the still-present good one, losing the previously loaded groups.»
+
 ## Tasks
 
 | ID | Spec | Ruta | Commit |
@@ -55,6 +62,7 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
 | T5 | S1 | panel: Alumnado → lista «Grupo - Materia» → selección (informes pendientes) | 27a5f55 · probada en vivo (L19) |
 | T10 | S7 | carga inicial ampliable guardada en el navegador (D13); Alumnado lee de ella; «Actualizar datos»; «Olvidar todo» (RP-08) | 6c2563c · probada en vivo (L19) |
 | T9 | — | limpieza: host `seneca.` solamente, gecko id, error de tabs, coherencias de REQUISITOS; «Olvidar todo» también accesible en «Preparar la extensión» con datos incompletos o de otra versión; no perder la carga buena anterior si falla una nueva | 43cb30a, d150fa5, aec80c8 · probada en vivo (L22) |
+| T11 | S8 | sugerencias de la revisión: marcos de Séneca, lista blanca al guardar, fallos de almacenamiento sin perder la carga buena (rama `carga-grupos-6-revision`) | pendiente |
 
 ## Log
 
@@ -152,3 +160,5 @@ leer hasta `## Log`. Marco obligatorio: `REQUISITOS.md`.
   fecha reales sustituidos por valores inventados en todos los commits, y el
   fragmento de token de prueba por uno ficticio. Hashes de este documento
   actualizados. Respaldo solo local, nunca publicado.
+- **L24** (verbatim) «Vamos con esas revisiones». Sexto tramo de la cadena:
+  `carga-grupos-6-revision` sobre `carga-grupos-5-limpieza`.
