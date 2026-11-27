@@ -1,5 +1,12 @@
 # Ayudante de Séneca
 
+> [!WARNING]
+> **Proyecto en desarrollo temprano.** La extensión todavía no está lista
+> para el uso diario: la mayor parte de lo que describen este documento y
+> [`REQUISITOS.md`](REQUISITOS.md) aún no existe, puede cambiar sin aviso y no
+> hay ninguna versión publicada en las tiendas de extensiones. Úsala solo
+> para probar.
+
 Extensión de navegador (Chrome, Edge, Brave y Firefox) que ayuda al
 profesorado de Andalucía con las tareas repetitivas de la plataforma
 [Séneca](https://seneca.juntadeandalucia.es/seneca/jsp/portal/): descargar
