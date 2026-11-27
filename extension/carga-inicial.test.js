@@ -25,6 +25,8 @@ function elemento(id, nombre, textoEnlace, extraer) {
     id,
     nombre,
     textoEnlace,
+    // Lista blanca de campos de cada fila (S8.2).
+    campos: ["texto"],
     extraer: extraer || ((html) => ({ filas: [{ texto: html }], avisos: [] })),
   };
 }
@@ -36,9 +38,11 @@ test("el registro es una lista ordenada de elementos y hoy solo trae los grupos 
     [["grupos", "Grupos de alumnos/as", "Grupos de alumnos/as"]]
   );
   assert.equal(Carga.ELEMENTOS[0].extraer, extraerGrupos);
+  // Cada elemento declara qué campos de cada fila se pueden guardar (S8.2).
+  assert.deepEqual(Carga.ELEMENTOS[0].campos, ["grupo", "materia", "alumnos", "etiqueta"]);
   // Añadir un elemento nuevo debe ser solo una entrada más en la lista.
   for (const entrada of Carga.ELEMENTOS) {
-    assert.deepEqual(Object.keys(entrada).sort(), ["extraer", "id", "nombre", "textoEnlace"]);
+    assert.deepEqual(Object.keys(entrada).sort(), ["campos", "extraer", "id", "nombre", "textoEnlace"]);
   }
 });
 
@@ -432,4 +436,223 @@ test("«Olvidar todo» borra el almacén, vacía la memoria y lo confirma (RP-08
   assert.equal(Carga.estaCompleta(resultado.carga), false);
   assert.match(Carga.MENSAJE_SIN_BORRAR, /No se han podido borrar/);
   assert.match(Carga.MENSAJE_SIN_GUARDAR, /No se han podido guardar/);
+});
+
+// --- S8.2: lista blanca de campos por elemento del registro ---
+
+test("S8.2: un adaptador que devuelve claves de más solo guarda los campos declarados de cada fila", async () => {
+  const carga = await Carga.ejecutarCarga({
+    elementos: [
+      {
+        id: "grupos",
+        nombre: "Grupos de alumnos/as",
+        textoEnlace: "Grupos de alumnos/as",
+        campos: ["grupo", "materia", "alumnos", "etiqueta"],
+        extraer: () => ({
+          grupos: [
+            {
+              grupo: "1BACA",
+              materia: "TECN1",
+              alumnos: 26,
+              etiqueta: "1BACA - TECN1",
+              nombre: "Alumno Inventado",
+              dni: "00000000T",
+              html: "<b>1BACA</b>",
+              anidado: { x: 1 },
+            },
+            { grupo: "2BACB", materia: "FISQ1", alumnos: 7, etiqueta: "2BACB - FISQ1", nombre: "Otro Inventado" },
+          ],
+          avisos: ["Fila 3: la materia no coincide."],
+          error: "",
+          nombre: "Centro Inventado",
+        }),
+      },
+    ],
+    pedir: async () => ({ ok: true, html: "html simulado" }),
+    ahora: RELOJ,
+  });
+
+  assert.deepEqual(carga.elementos.grupos, {
+    ok: true,
+    datos: {
+      grupos: [
+        { grupo: "1BACA", materia: "TECN1", alumnos: 26, etiqueta: "1BACA - TECN1" },
+        { grupo: "2BACB", materia: "FISQ1", alumnos: 7, etiqueta: "2BACB - FISQ1" },
+      ],
+    },
+    avisos: ["Fila 3: la materia no coincide."],
+    error: "",
+  });
+  for (const fila of carga.elementos.grupos.datos.grupos) {
+    assert.deepEqual(Object.keys(fila).sort(), ["alumnos", "etiqueta", "grupo", "materia"]);
+  }
+  // Las claves de más no llegan ni a la memoria ni al almacén.
+  const guardado = JSON.stringify(carga);
+  for (const prohibido of ["nombre", "dni", "00000000T", "Alumno Inventado", "Otro Inventado", "<b>", "anidado", "Centro Inventado"]) {
+    assert.equal(guardado.includes(prohibido), false, `no debe guardarse «${prohibido}»`);
+  }
+});
+
+test("S8.2: un elemento sin lista blanca declarada no guarda datos ni llega a pedir la pantalla", async () => {
+  const pedidos = [];
+  const estados = [];
+
+  const carga = await Carga.ejecutarCarga({
+    elementos: [
+      {
+        id: "sin-lista",
+        nombre: "Sin lista blanca",
+        textoEnlace: "Enlace sin lista",
+        extraer: () => ({ filas: [{ nombre: "Alumno Inventado", dni: "00000000T" }] }),
+      },
+      {
+        id: "lista-vacia",
+        nombre: "Lista vacía",
+        textoEnlace: "Enlace lista vacía",
+        campos: [],
+        extraer: () => ({ filas: [{ nombre: "Alumno Inventado" }] }),
+      },
+    ],
+    pedir: async (textoEnlace) => {
+      pedidos.push(textoEnlace);
+      return { ok: true, html: "html con datos" };
+    },
+    ahora: RELOJ,
+    alProgreso: (lineas) => estados.push(lineas.map((l) => l.estado).join(",")),
+  });
+
+  assert.equal(Carga.MENSAJE_SIN_CAMPOS, "Este elemento de la carga no declara qué campos se pueden guardar; no se ha guardado nada.");
+  // Sin lista blanca no se pide nada a Séneca y no se guarda ni una fila.
+  assert.deepEqual(pedidos, []);
+  for (const id of ["sin-lista", "lista-vacia"]) {
+    assert.deepEqual(carga.elementos[id], {
+      ok: false,
+      datos: {},
+      avisos: [],
+      error: Carga.MENSAJE_SIN_CAMPOS,
+    });
+  }
+  assert.equal(JSON.stringify(carga).includes("Alumno Inventado"), false);
+  assert.deepEqual(estados, ["pendiente,pendiente", "error,pendiente", "error,error"]);
+});
+
+// --- S8.3: un fallo al guardar no se lleva por delante la carga buena ---
+
+test("S8.3: si el navegador no deja guardar la carga nueva, se conserva la anterior y se dice con su fecha", async () => {
+  const anterior = cargaCompleta(RELOJ().toISOString());
+  const nueva = cargaCompleta("2025-11-27T10:30:00.000Z");
+  let guardado = anterior;
+  let escrituras = 0;
+
+  const resultado = await Carga.aplicarCarga({
+    anterior,
+    nueva,
+    guardar: async () => {
+      escrituras += 1;
+      throw new Error("QUOTA_BYTES quota exceeded");
+    },
+  });
+
+  assert.equal(escrituras, 1);
+  // Lo guardado no se toca y la carga anterior sigue siendo utilizable.
+  assert.equal(guardado, anterior);
+  assert.equal(resultado.carga, anterior);
+  assert.equal(Carga.estaCompleta(resultado.carga), true);
+  assert.deepEqual(resultado.carga.elementos.grupos.datos.grupos, [
+    { grupo: "1BACA", materia: "TECN1", alumnos: 26, etiqueta: "1BACA - TECN1" },
+  ]);
+  assert.equal(resultado.conservada, true);
+  assert.equal(resultado.errorGuardado, "");
+  assert.equal(
+    resultado.aviso,
+    "No se han podido guardar los datos nuevos en este navegador. " +
+      "Se mantienen los datos cargados el 27/11/2025 09:05. " +
+      "Pulsa «Actualizar datos» para volver a intentarlo."
+  );
+});
+
+test("S8.3: sin carga anterior, un fallo al guardar deja el primer uso con el aviso de siempre", async () => {
+  const resultado = await Carga.aplicarCarga({
+    anterior: null,
+    nueva: cargaCompleta(RELOJ().toISOString()),
+    guardar: async () => {
+      throw new Error("denied by the browser");
+    },
+  });
+
+  assert.deepEqual(resultado, {
+    carga: null,
+    conservada: false,
+    aviso: "",
+    errorGuardado: "No se han podido guardar los datos en este navegador. Vuelve a intentarlo.",
+  });
+  assert.equal(Carga.estaCompleta(resultado.carga), false);
+  assert.equal(Carga.hayDatosQueOlvidar(resultado.carga), false);
+});
+
+// --- S8.4: un fallo de lectura no se confunde con «no hay nada guardado» ---
+
+test("S8.4: leer el almacén distingue «no hay nada» de «no se pudo leer»", async () => {
+  const guardada = cargaCompleta(RELOJ().toISOString());
+
+  assert.deepEqual(await Carga.leerCarga({ leer: async () => null }), {
+    carga: null,
+    lecturaFallida: false,
+    mensaje: "",
+  });
+  assert.deepEqual(await Carga.leerCarga({ leer: async () => guardada }), {
+    carga: guardada,
+    lecturaFallida: false,
+    mensaje: "",
+  });
+  assert.deepEqual(
+    await Carga.leerCarga({
+      leer: async () => {
+        throw new Error("storage unavailable");
+      },
+    }),
+    {
+      carga: null,
+      lecturaFallida: true,
+      mensaje: "No se han podido leer los datos guardados. Cierra y vuelve a abrir el panel.",
+    }
+  );
+  assert.equal(Carga.MENSAJE_SIN_LEER, "No se han podido leer los datos guardados. Cierra y vuelve a abrir el panel.");
+});
+
+test("S8.4: tras un fallo de lectura no se escribe nada aunque se lance una carga", async () => {
+  let escrituras = 0;
+  const guardar = async () => {
+    escrituras += 1;
+  };
+
+  const lectura = await Carga.leerCarga({
+    leer: async () => {
+      throw new Error("no se pudo leer el almacén");
+    },
+  });
+
+  // Ni una carga completa ni una fallida tocan el almacén ni piden datos.
+  const completa = await Carga.aplicarCarga({
+    anterior: lectura.carga,
+    nueva: cargaCompleta(RELOJ().toISOString()),
+    guardar,
+    lecturaFallida: lectura.lecturaFallida,
+  });
+  const fallida = await Carga.aplicarCarga({
+    anterior: lectura.carga,
+    nueva: cargaFallida("Séneca respondió con un error (HTTP 500)."),
+    guardar,
+    lecturaFallida: lectura.lecturaFallida,
+  });
+
+  assert.equal(escrituras, 0);
+  assert.deepEqual(completa, {
+    carga: null,
+    conservada: false,
+    aviso: "",
+    errorGuardado: Carga.MENSAJE_SIN_LEER,
+  });
+  assert.deepEqual(fallida, completa);
+  assert.equal(Carga.estaCompleta(completa.carga), false);
 });

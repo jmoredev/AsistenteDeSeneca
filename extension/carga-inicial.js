@@ -9,8 +9,10 @@
 // Se guarda solo en `chrome.storage.local` (nunca sincronizado ni enviado) y
 // solo datos de trabajo sin datos personales del alumnado: grupo, materia,
 // número de alumnos y etiqueta, más los avisos y el error del elemento y la
-// fecha de la carga. Nada de HTML, URL ni tokens (D13). «Olvidar todo»
-// (RP-08) borra el almacén y la memoria.
+// fecha de la carga. Cada elemento del registro declara qué campos de cada
+// fila se pueden guardar (`campos`) y el saneador copia solo esos (S8.2): si
+// un elemento no los declara, no se guarda ninguna fila. Nada de HTML, URL ni
+// tokens (D13). «Olvidar todo» (RP-08) borra el almacén y la memoria.
 //
 // Este archivo es puro: no toca el DOM ni `chrome.*`. La petición a Séneca,
 // el reloj y el almacenamiento se inyectan, así que corre igual en el panel y
@@ -42,18 +44,24 @@
   const MENSAJE_SIN_BORRAR = "No se han podido borrar los datos guardados. Vuelve a intentarlo.";
   const MENSAJE_SIN_GUARDAR = "No se han podido guardar los datos en este navegador. Vuelve a intentarlo.";
   const MENSAJE_SIN_CARGA = "No se ha podido completar la carga de datos. Vuelve a intentarlo.";
+  const MENSAJE_SIN_LEER = "No se han podido leer los datos guardados. Cierra y vuelve a abrir el panel.";
+  const MENSAJE_SIN_CAMPOS =
+    "Este elemento de la carga no declara qué campos se pueden guardar; no se ha guardado nada.";
 
   const ERROR_INESPERADO =
     "No se pudo completar la carga de datos. Comprueba que Séneca sigue abierto y vuelve a intentarlo.";
 
   // Lista ampliable de la carga inicial: el orden es el orden en que se piden
   // las pantallas (una detrás de otra, nunca en paralelo, para no castigar al
-  // servidor de Séneca). Añadir un elemento nuevo es solo una entrada más.
+  // servidor de Séneca). Añadir un elemento nuevo es solo una entrada más, con
+  // los campos de cada fila que se pueden guardar (S8.2); sin `campos` no se
+  // guarda ninguna fila (cierra en fallo).
   const ELEMENTOS = [
     {
       id: "grupos",
       nombre: "Grupos de alumnos/as",
       textoEnlace: peticion.TEXTO_ENLACE_GRUPOS,
+      campos: ["grupo", "materia", "alumnos", "etiqueta"],
       extraer: gruposAlumnos.extraerGrupos,
     },
   ];
@@ -86,31 +94,50 @@
     return (progreso || []).map((linea) => ({ ...linea, texto: textoProgreso(linea) }));
   }
 
-  // Copia solo texto, números y booleanos: ni HTML, ni estructuras ajenas.
-  function soloPrimitivas(valor) {
-    if (Array.isArray(valor)) return valor.map(soloPrimitivas);
-    if (valor && typeof valor === "object") {
-      const copia = {};
-      for (const clave of Object.keys(valor)) {
-        const interno = valor[clave];
-        if (typeof interno === "string" || typeof interno === "boolean") copia[clave] = interno;
-        else if (typeof interno === "number" && Number.isFinite(interno)) copia[clave] = interno;
-      }
-      return copia;
-    }
+  // Un valor guardable: texto, número finito o booleano. Cualquier otra cosa
+  // (nulos, objetos, HTML estructurado) no se guarda.
+  function valorGuardable(valor) {
     if (typeof valor === "string" || typeof valor === "boolean") return valor;
     if (typeof valor === "number" && Number.isFinite(valor)) return valor;
-    return "";
+    return undefined;
   }
 
-  // Lo que devuelve un adaptador, sin sus avisos ni su error: esos van aparte.
-  // Hoy son los grupos ({ grupo, materia, alumnos, etiqueta }) y nada más.
-  function datosDeExtraccion(extraido) {
+  // Lista blanca declarada por el elemento del registro (S8.2). Devuelve null
+  // si no es una lista válida: entonces no se guarda ninguna fila.
+  function camposPermitidos(campos) {
+    if (!Array.isArray(campos) || campos.length === 0) return null;
+    const lista = [];
+    for (const campo of campos) {
+      if (typeof campo !== "string" || campo === "" || campo === "avisos" || campo === "error") return null;
+      lista.push(campo);
+    }
+    return lista;
+  }
+
+  // Una fila con solo los campos declarados: lo demás se descarta.
+  function filaPermitida(fila, campos) {
+    const limpia = {};
+    if (!fila || typeof fila !== "object") return limpia;
+    for (const campo of campos) {
+      const valor = valorGuardable(fila[campo]);
+      if (valor !== undefined) limpia[campo] = valor;
+    }
+    return limpia;
+  }
+
+  // Lo que devuelve un adaptador: solo sus colecciones de filas, sin avisos ni
+  // error (esos van aparte) y con solo los campos que el elemento declara en
+  // `campos` (S8.2). Cualquier otra clave que devuelva el adaptador, escalar o
+  // anidada, se descarta; sin lista blanca no se copia nada.
+  function datosDeExtraccion(extraido, campos) {
     const datos = {};
-    if (!extraido || typeof extraido !== "object") return datos;
+    const permitidos = camposPermitidos(campos);
+    if (!permitidos || !extraido || typeof extraido !== "object") return datos;
     for (const clave of Object.keys(extraido)) {
       if (clave === "avisos" || clave === "error") continue;
-      datos[clave] = soloPrimitivas(extraido[clave]);
+      const valor = extraido[clave];
+      if (!Array.isArray(valor)) continue;
+      datos[clave] = valor.map((fila) => filaPermitida(fila, permitidos));
     }
     return datos;
   }
@@ -184,6 +211,19 @@
     return fecha === "" ? "" : `Datos cargados el ${fecha}`;
   }
 
+  // La carga nueva no llegó a guardarse porque el navegador rechazó la
+  // escritura (S8.3): se dice y se recuerda de cuándo son los datos que se
+  // mantienen, que siguen utilizables en el menú y en Alumnado.
+  function textoNoGuardada(anterior) {
+    const cuando = formatearFecha(anterior && anterior.cargadoEl);
+    const mantiene =
+      cuando === "" ? "Se mantienen los datos de la última carga." : `Se mantienen los datos cargados el ${cuando}.`;
+    return (
+      `No se han podido guardar los datos nuevos en este navegador. ${mantiene} ` +
+      "Pulsa «Actualizar datos» para volver a intentarlo."
+    );
+  }
+
   // Hay algo guardado que «Olvidar todo» (RP-08) puede borrar: sirve cualquier
   // carga, aunque esté incompleta o sea de una versión anterior del formato,
   // porque el panel la ofrece también desde «Preparar la extensión» (T9).
@@ -206,22 +246,56 @@
   }
 
   // Aplica la carga nueva sobre la guardada con el almacén inyectado.
-  // Devuelve { carga, conservada, aviso }: `aviso` es el texto para el panel y
-  // `conservada` indica que la carga de pantalla no se ha tocado.
+  // Devuelve { carga, conservada, aviso, errorGuardado }: `aviso` es el texto
+  // para el panel, `conservada` indica que la carga de pantalla no se ha tocado
+  // y `errorGuardado` es el aviso cuando no queda nada que conservar.
+  // Si el navegador rechaza la escritura de una carga nueva completa, se sigue
+  // usando la carga buena anterior en memoria y en el panel, con su fecha
+  // (S8.3). Y con la lectura del almacén fallida no se escribe nada, porque no
+  // se sabe qué hay guardado (S8.4).
   async function aplicarCarga(opciones) {
     const anterior = opciones.anterior || null;
     const nueva = opciones.nueva || null;
     const guardar = opciones.guardar;
 
+    if (opciones.lecturaFallida) {
+      return { carga: anterior, conservada: false, aviso: "", errorGuardado: MENSAJE_SIN_LEER };
+    }
+
     if (estaCompleta(nueva)) {
-      await guardar(nueva);
-      return { carga: nueva, conservada: false, aviso: "" };
+      try {
+        await guardar(nueva);
+        return { carga: nueva, conservada: false, aviso: "", errorGuardado: "" };
+      } catch (e) {
+        if (estaCompleta(anterior)) {
+          return { carga: anterior, conservada: true, aviso: textoNoGuardada(anterior), errorGuardado: "" };
+        }
+        return { carga: null, conservada: false, aviso: "", errorGuardado: MENSAJE_SIN_GUARDAR };
+      }
     }
     if (estaCompleta(anterior)) {
-      return { carga: anterior, conservada: true, aviso: textoConservada(nueva, anterior) };
+      return { carga: anterior, conservada: true, aviso: textoConservada(nueva, anterior), errorGuardado: "" };
     }
-    if (nueva) await guardar(nueva);
-    return { carga: nueva || anterior, conservada: false, aviso: "" };
+    if (nueva) {
+      try {
+        await guardar(nueva);
+      } catch (e) {
+        return { carga: null, conservada: false, aviso: "", errorGuardado: MENSAJE_SIN_GUARDAR };
+      }
+    }
+    return { carga: nueva || anterior, conservada: false, aviso: "", errorGuardado: "" };
+  }
+
+  // Lee la carga guardada con el almacén inyectado (S8.4): «no hay nada
+  // guardado» y «no se pudo leer» son estados distintos. Con la lectura
+  // fallida el panel lo dice y no deja escribir encima.
+  async function leerCarga(opciones) {
+    try {
+      const guardada = await opciones.leer();
+      return { carga: guardada || null, lecturaFallida: false, mensaje: "" };
+    } catch (e) {
+      return { carga: null, lecturaFallida: true, mensaje: MENSAJE_SIN_LEER };
+    }
   }
 
   // Ejecuta la carga inicial: un elemento detrás de otro, anotando cada fallo
@@ -243,6 +317,16 @@
 
     for (let i = 0; i < elementos.length; i += 1) {
       const elemento = elementos[i];
+      // Sin lista blanca declarada no se guarda ninguna fila y ni siquiera se
+      // pide la pantalla: cierra en fallo (S8.2).
+      const permitidos = camposPermitidos(elemento.campos);
+      if (!permitidos) {
+        carga.elementos[elemento.id] = { ok: false, datos: {}, avisos: [], error: MENSAJE_SIN_CAMPOS };
+        progreso[i] = { ...progreso[i], estado: "error", error: MENSAJE_SIN_CAMPOS };
+        avisar();
+        continue;
+      }
+
       progreso[i] = { ...progreso[i], estado: "cargando", error: "" };
       avisar();
 
@@ -278,7 +362,7 @@
         } else {
           registro = {
             ok: true,
-            datos: datosDeExtraccion(extraido),
+            datos: datosDeExtraccion(extraido, permitidos),
             avisos: Array.isArray(extraido.avisos) ? extraido.avisos.map(String) : [],
             error: "",
           };
@@ -325,6 +409,8 @@
     MENSAJE_SIN_BORRAR,
     MENSAJE_SIN_GUARDAR,
     MENSAJE_SIN_CARGA,
+    MENSAJE_SIN_LEER,
+    MENSAJE_SIN_CAMPOS,
     ERROR_INESPERADO,
     progresoInicial,
     textoProgreso,
@@ -337,7 +423,9 @@
     textoCargadoEl,
     hayDatosQueOlvidar,
     textoConservada,
+    textoNoGuardada,
     aplicarCarga,
+    leerCarga,
     ejecutarCarga,
     olvidar,
   };

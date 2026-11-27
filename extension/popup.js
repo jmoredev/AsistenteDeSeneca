@@ -101,6 +101,8 @@ function conectarCarga(tab) {
   let elegido = ""; // selección en memoria, sin almacenamiento
   let ocupado = false; // hay una carga en marcha
   let errorGuardado = ""; // aviso si el navegador no dejó guardar
+  let errorLectura = ""; // aviso si no se pudo leer lo guardado (S8.4)
+  let lecturaFallida = false; // no se sabe qué hay guardado: no se escribe encima
   let conservada = false; // la última carga falló y se mantienen los datos anteriores
   let avisoConservada = ""; // qué falló y de cuándo son los datos que se mantienen
 
@@ -136,8 +138,9 @@ function conectarCarga(tab) {
     dom.menu.hidden = !completa;
     // «Olvidar todo» (RP-08) se ofrece también en «Preparar la extensión» en
     // cuanto haya algo guardado, aunque la carga esté incompleta o sea de otra
-    // versión del formato (T9).
-    dom.olvidarPrimerUso.hidden = !CargaInicial.hayDatosQueOlvidar(carga);
+    // versión del formato (T9). Si no se pudo leer el almacén también se
+    // ofrece: borrar nunca sobrescribe lo que hay guardado (S8.4).
+    dom.olvidarPrimerUso.hidden = !CargaInicial.hayDatosQueOlvidar(carga) && !lecturaFallida;
 
     if (completa) {
       dom.fecha.textContent = CargaInicial.textoCargadoEl(carga.cargadoEl);
@@ -145,7 +148,7 @@ function conectarCarga(tab) {
 
     // Qué falló (o si el navegador no dejó guardar), para poder reintentar.
     const fallos = CargaInicial.fallosDeCarga(carga);
-    const partes = [CargaInicial.textoFallos(fallos), errorGuardado, avisoConservada].filter(Boolean);
+    const partes = [CargaInicial.textoFallos(fallos), errorGuardado, errorLectura, avisoConservada].filter(Boolean);
     dom.fallos.textContent = partes.join(" ");
     dom.fallos.hidden = partes.length === 0;
     dom.cargar.textContent = fallos.length === 0 ? CargaInicial.TEXTO_CARGAR : CargaInicial.TEXTO_REINTENTAR;
@@ -157,6 +160,13 @@ function conectarCarga(tab) {
 
   async function cargarDatos() {
     if (ocupado) return;
+    // Con la lectura del almacén fallida no se escribe nada: podría borrar
+    // datos buenos que no hemos podido leer (S8.4).
+    if (lecturaFallida) {
+      dom.fallos.textContent = CargaInicial.MENSAJE_SIN_LEER;
+      dom.fallos.hidden = false;
+      return;
+    }
     ocupado = true;
     bloquear(true);
     errorGuardado = "";
@@ -185,19 +195,25 @@ function conectarCarga(tab) {
       sinCarga = true;
     }
 
-    // Una carga nueva que falla no borra la anterior si era buena (T9): se
-    // conserva lo guardado y se explica qué falló y de cuándo son los datos.
+    // Una carga nueva que falla no borra la anterior si era buena (T9) y un
+    // fallo del almacén tampoco (S8.3): se conserva lo que ya funcionaba y se
+    // explica qué pasó y de cuándo son los datos.
     let decision;
     try {
-      decision = await CargaInicial.aplicarCarga({ anterior: carga, nueva, guardar: Almacen.guardar });
+      decision = await CargaInicial.aplicarCarga({
+        anterior: carga,
+        nueva,
+        guardar: Almacen.guardar,
+        lecturaFallida,
+      });
     } catch (e) {
-      decision = { carga: null, conservada: false, aviso: "" };
-      errorGuardado = CargaInicial.MENSAJE_SIN_GUARDAR;
+      decision = { carga: null, conservada: false, aviso: "", errorGuardado: CargaInicial.MENSAJE_SIN_GUARDAR };
     }
 
     carga = decision.carga;
     conservada = decision.conservada;
     avisoConservada = decision.aviso;
+    errorGuardado = decision.errorGuardado || "";
     // Si la carga ni siquiera pudo empezar y no hay datos que conservar, el
     // panel lo dice como siempre.
     if (sinCarga && !conservada) errorGuardado = CargaInicial.MENSAJE_SIN_CARGA;
@@ -226,6 +242,10 @@ function conectarCarga(tab) {
       errorGuardado = "";
       conservada = false;
       avisoConservada = "";
+      // Tras borrar de verdad ya no hay nada que proteja el guardado de la
+      // lectura fallida: se vuelve a poder cargar (S8.4).
+      lecturaFallida = false;
+      errorLectura = "";
       dom.mensaje.textContent = resultado.mensaje;
       dom.mensaje.hidden = false;
       reiniciarAlumnado();
@@ -241,8 +261,11 @@ function conectarCarga(tab) {
   }
 
   function bloquear(si) {
-    dom.cargar.disabled = si;
-    dom.actualizar.disabled = si;
+    // Con la lectura fallida no se ofrece cargar ni actualizar: no se sabe qué
+    // hay guardado y una escritura podría perderlo (S8.4). «Olvidar todo»
+    // (RP-08) sigue disponible.
+    dom.cargar.disabled = si || lecturaFallida;
+    dom.actualizar.disabled = si || lecturaFallida;
     dom.olvidar.disabled = si;
     dom.olvidarPrimerUso.disabled = si;
     dom.alumnado.disabled = si;
@@ -329,11 +352,13 @@ function conectarCarga(tab) {
 
   return {
     async iniciar() {
-      try {
-        carga = await Almacen.leer();
-      } catch (e) {
-        carga = null;
-      }
+      // «No hay nada guardado» y «no se pudo leer» son estados distintos
+      // (S8.4): solo el primero lleva al primer uso.
+      const leida = await CargaInicial.leerCarga({ leer: Almacen.leer });
+      carga = leida.carga;
+      lecturaFallida = leida.lecturaFallida;
+      errorLectura = leida.mensaje;
+      bloquear(false);
       pintarCarga();
     },
   };

@@ -39,8 +39,9 @@
       if (r.vistaIntacta !== null) {
         decir(r.vistaIntacta ? "4. ✔ Tu pantalla no ha cambiado." : "4. ✖ Tu pantalla ha cambiado durante la prueba.");
       }
-      // Sin enlace no ha habido petición: se termina sin la comprobación manual.
-      if (r.motivo === "sin-enlace" || r.motivo === "sin-destino") return;
+      // Sin enlace, sin destino o solo en marcos ajenos no ha habido petición:
+      // se termina sin la comprobación manual.
+      if (r.motivo === "sin-enlace" || r.motivo === "sin-destino" || r.motivo === "marco-ajeno") return;
 
       decir(
         "5. Comprobación manual: en Séneca pulsa «Volver» o abre otra opción del menú " +

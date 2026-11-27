@@ -8,7 +8,9 @@
 // docente, nunca toca su DOM y nada sale del navegador.
 //
 // Salvaguardas, todas obligatorias: solo el origen de Séneca (antes de cada
-// petición y sobre la URL final), 2 saltos como máximo, 20 s de espera,
+// petición y sobre la URL final), solo marcos cuyo documento es del origen de
+// Séneca (ni la búsqueda del enlace ni la sonda se ejecutan en marcos de otra
+// web incrustados en la pestaña, S8.1), 2 saltos como máximo, 20 s de espera,
 // decodificación Windows-1252 y ningún destino fuera de Séneca.
 
 (function (raiz) {
@@ -32,10 +34,19 @@
     return `Séneca respondió con un error (HTTP ${estado}). Vuelve a intentarlo dentro de un momento.`;
   }
 
+  function errorMarcoAjeno(textoEnlace) {
+    return (
+      `Solo encuentro el menú «${textoEnlace}» en marcos que no son de Séneca, así que no se ha pedido nada. ` +
+      "Abre la pantalla en la pestaña de Séneca y vuelve a intentarlo."
+    );
+  }
+
   // --- Funciones inyectadas en la página: autosuficientes, chrome.scripting
   // las serializa y no ven este módulo. ---
 
-  // Busca el enlace del menú por su texto visible en cada marco.
+  // Busca el enlace del menú por su texto visible en cada marco y devuelve
+  // también el origen de su propio documento (S8.1): así la selección de marco
+  // descarta los marcos de otra web.
   function localizarEnlace(texto) {
     const enlace = Array.from(document.querySelectorAll("a")).find(
       (a) => a.textContent.replace(/\s+/g, " ").trim() === texto
@@ -45,6 +56,7 @@
       menulink: enlace.getAttribute("data-menulink"),
       href: enlace.getAttribute("href"),
       base: document.baseURI,
+      origin: location.origin,
     };
   }
 
@@ -104,6 +116,16 @@
     return { valida: true, motivo: null, siguiente: analisis.siguienteSalto(salto.html || "", salto.final) };
   }
 
+  // Marcos que contienen el enlace, separados por el origen de su documento
+  // (S8.1): solo los del origen de Séneca pueden elegirse para lanzar la
+  // petición, y de ellos el primero con destino.
+  function elegirMarco(resultados) {
+    const conEnlace = (resultados || []).filter((m) => m && m.result);
+    const propios = conEnlace.filter((m) => origenPermitido(m.result.origin));
+    const ajenos = conEnlace.filter((m) => !origenPermitido(m.result.origin));
+    return { propios, ajenos, utilizable: propios.find((m) => destinoDe(m.result)) || null };
+  }
+
   // Cada paso, tal y como lo muestra el informe del diagnóstico en el panel.
   function textoDePaso(paso) {
     switch (paso.tipo) {
@@ -111,6 +133,8 @@
         return `1. Busco el enlace «${paso.texto}» en la página…`;
       case "sin-enlace":
         return `✖ No encuentro «${paso.texto}». Entra en una pantalla de Séneca con el menú lateral y repite.`;
+      case "marco-ajeno":
+        return `✖ Solo encuentro «${paso.texto}» en marcos que no son de Séneca; no se ha pedido nada.`;
       case "sin-destino":
         return `✖ Hay ${paso.cuantos} enlaces, pero ninguno tiene destino (ni data-menulink ni href).`;
       case "varios-marcos":
@@ -170,23 +194,29 @@
       func: localizarEnlace,
       args: [textoEnlace],
     });
-    const encontrados = marcos.filter((m) => m.result);
-    if (encontrados.length === 0) {
+    const { propios, ajenos, utilizable } = elegirMarco(marcos);
+    if (propios.length === 0 && ajenos.length === 0) {
       avisar({ tipo: "sin-enlace", texto: textoEnlace });
       return fallar(
         "sin-enlace",
         `No encuentro el menú «${textoEnlace}». Abre una pantalla de Séneca con el menú lateral y vuelve a intentarlo.`
       );
     }
-    const utilizable = encontrados.find((m) => destinoDe(m.result));
     if (!utilizable) {
-      avisar({ tipo: "sin-destino", cuantos: encontrados.length });
+      // El enlace aparece, pero solo en marcos de otra web (S8.1): ninguno de
+      // ellos puede dirigir una petición con la sesión del docente. No se pide
+      // nada.
+      if (propios.length === 0) {
+        avisar({ tipo: "marco-ajeno", texto: textoEnlace });
+        return fallar("marco-ajeno", errorMarcoAjeno(textoEnlace));
+      }
+      avisar({ tipo: "sin-destino", cuantos: propios.length });
       return fallar(
         "sin-destino",
         `Encontré «${textoEnlace}», pero su enlace no lleva a ninguna dirección de Séneca.`
       );
     }
-    if (encontrados.length > 1) avisar({ tipo: "varios-marcos", cuantos: encontrados.length });
+    if (propios.length > 1) avisar({ tipo: "varios-marcos", cuantos: propios.length });
 
     const { frameId, result: enlace } = utilizable;
     resultado.frameId = frameId;
@@ -266,8 +296,10 @@
     origenPermitido,
     destinoDe,
     evaluarSalto,
+    elegirMarco,
     textoDePaso,
     obtenerPantalla,
+    localizarEnlace,
   };
   if (typeof module === "object" && module.exports) module.exports = api;
   else raiz.SenecaPeticion = api;
